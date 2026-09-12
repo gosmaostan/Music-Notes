@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Notes for Piano and Guitar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     FIREBASE SDK (compat build — simplest for a single HTML file)
+     ============================================================ -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
+
+<style>
+  :root{
+    --ink:#1E1B16; --paper:#F5EFE1; --charcoal:#17181C;
+    --brass:#C89B4A; --brass-dim:#8C6F38; --teal:#3E6B6E; --red:#A24936;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--charcoal);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(200,155,74,0.07), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(62,107,110,0.08), transparent 45%);
+    color: var(--paper); font-family:'Inter',sans-serif; min-height:100vh;
+  }
+  .staff-rule{
+    height:22px;
+    background-image: repeating-linear-gradient(to bottom,
+      transparent 0px, transparent 4px, rgba(30,27,22,0.35) 4px, rgba(30,27,22,0.35) 5px,
+      transparent 5px, transparent 9px);
+    opacity:0.5;
+  }
+  h1,h2,.display{ font-family:'Fraunces',serif; letter-spacing:-0.01em; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between;
+    padding:22px clamp(18px,4vw,48px); border-bottom:1px solid rgba(245,239,225,0.1); }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{ width:40px;height:40px;border-radius:9px;
+    background:linear-gradient(160deg,var(--brass),var(--brass-dim));
+    display:flex;align-items:center;justify-content:center; font-family:'Fraunces',serif;
+    font-weight:700; font-size:20px; color:#1a1a1a; flex-shrink:0; }
+  .brand-title{ font-size:19px; font-weight:600; line-height:1.15; }
+  .brand-sub{ font-size:12.5px; color:rgba(245,239,225,0.5); margin-top:2px; }
+  button{ font-family:'Inter',sans-serif; cursor:pointer; }
+  .btn{ border:none; border-radius:8px; padding:10px 18px; font-size:14.5px; font-weight:600; }
+  .btn-brass{ background:var(--brass); color:#1a1400; }
+  .btn-ghost{ background:transparent; color:var(--paper); border:1px solid rgba(245,239,225,0.25); }
+  .userchip{ display:flex; align-items:center; gap:10px; }
+  .avatar{ width:34px;height:34px;border-radius:50%; background:var(--teal); color:#fff;
+    display:flex;align-items:center;justify-content:center; font-weight:600; font-size:14px; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:34px clamp(16px,4vw,40px) 80px; }
+  .banner{ background: rgba(200,155,74,0.12); border:1px solid rgba(200,155,74,0.3);
+    border-radius:10px; padding:14px 18px; font-size:13.5px; color:#EBD9AE; margin-bottom:24px; }
+
+  .grid{ display:grid; grid-template-columns:380px 1fr; gap:28px; align-items:start; }
+  @media (max-width:860px){ .grid{ grid-template-columns:1fr; } }
+
+  .panel{ background:var(--paper); color:var(--ink); border-radius:14px; overflow:hidden;
+    box-shadow:0 12px 34px rgba(0,0,0,0.28); }
+  .panel-body{ padding:24px 24px 26px; }
+  .panel h2{ font-size:18px; font-weight:600; margin:0 0 4px; }
+  .panel .sub{ font-size:13px; color:#6b6455; margin-bottom:18px; }
+  .field2{ margin-bottom:14px; }
+  .field2 label{ display:block; font-size:12.5px; font-weight:600; color:#5c5647; margin-bottom:5px; }
+  .field2 input{ width:100%; padding:10px 12px; border-radius:7px; border:1px solid rgba(30,27,22,0.18);
+    font-size:14px; background:#fffefb; }
+  .field2 input:focus{ outline:2px solid var(--brass); outline-offset:1px; }
+  .filedrop{ border:1.5px dashed rgba(30,27,22,0.28); border-radius:9px; padding:18px 14px;
+    text-align:center; font-size:13px; color:#6b6455; margin-bottom:16px; background:#fffefb; }
+  .filedrop.has-file{ border-style:solid; border-color:var(--teal); color:var(--ink); }
+  .filedrop input{ display:none; }
+  .filedrop-label{ display:block; cursor:pointer; }
+  .save-row{ display:flex; gap:10px; align-items:center; margin-top:18px; }
+  .save-msg{ font-size:12.5px; color:var(--teal); }
+  .save-msg.err{ color:var(--red); }
+
+  .songs-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; }
+  .songs-head h2{ color:var(--paper); }
+  .songs-count{ font-size:13px; color:rgba(245,239,225,0.5); }
+  .song-card{ background:var(--paper); color:var(--ink); border-radius:12px; margin-bottom:16px;
+    overflow:hidden; box-shadow:0 8px 22px rgba(0,0,0,0.22); }
+  .song-card .staff-rule{ height:16px; }
+  .song-main{ padding:16px 20px 18px; display:flex; justify-content:space-between; gap:16px; }
+  .song-title{ font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin:0 0 6px; }
+  .song-meta{ font-size:13px; color:#5c5647; line-height:1.7; }
+  .song-meta b{ color:#3a362c; }
+  .song-actions{ display:flex; flex-direction:column; gap:8px; align-items:flex-end; flex-shrink:0; }
+  .link-btn{ font-size:13px; font-weight:600; text-decoration:none; padding:7px 13px; border-radius:7px;
+    display:inline-block; text-align:center; white-space:nowrap; }
+  .link-pdf{ background:var(--brass); color:#1a1400; }
+  .link-yt{ background:var(--teal); color:#fff; }
+  .link-disabled{ background:#e6ded0; color:#a39a86; pointer-events:none; }
+  .btn-danger{ background:transparent; color:#A24936; border:1px solid rgba(162,73,54,0.35);
+    padding:7px 12px; font-size:13px; border-radius:7px; }
+  .empty{ background:rgba(245,239,225,0.05); border:1px dashed rgba(245,239,225,0.2); border-radius:12px;
+    padding:34px 20px; text-align:center; color:rgba(245,239,225,0.55); font-size:14px; }
+  .public-note{ margin-bottom:16px; font-size:13px; color:rgba(245,239,225,0.55); }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">♪</div>
+      <div>
+        <div class="brand-title">Music Notes for Piano and Guitar</div>
+        <div class="brand-sub" id="topbarSub">Browse sheet music — anyone can view</div>
+      </div>
+    </div>
+    <div id="authArea">
+      <button class="btn btn-brass" id="signInBtn">Sign in with Google</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="banner" id="configBanner">
+      ⚠️ This page hasn't been connected to Firebase yet. Open this file's &lt;script&gt; section and paste in your <code>firebaseConfig</code> values and your admin email — see the comments marked <code>EDIT THIS</code>.
+    </div>
+
+    <div class="grid" id="mainGrid" style="display:none;">
+      <div class="panel" id="adminPanel" style="display:none;">
+        <div class="staff-rule"></div>
+        <div class="panel-body">
+          <h2>Add a song</h2>
+          <div class="sub">Only visible to you, the admin.</div>
+
+          <div class="filedrop" id="filedrop">
+            <label class="filedrop-label" for="pdfInput" id="filedropLabel">
+              📄 Click to choose a PDF<br><span style="font-size:11.5px;">Piano / guitar notes</span>
+            </label>
+            <input type="file" id="pdfInput" accept="application/pdf">
+          </div>
+
+          <div class="field2"><label>Song title</label><input type="text" id="fTitle" placeholder="e.g. Kannaalane"></div>
+          <div class="field2"><label>Artist</label><input type="text" id="fArtist" placeholder="e.g. Hariharan"></div>
+          <div class="field2"><label>Album</label><input type="text" id="fAlbum" placeholder="e.g. Bombay"></div>
+          <div class="field2"><label>Music director</label><input type="text" id="fDirector" placeholder="e.g. A.R. Rahman"></div>
+          <div class="field2"><label>YouTube link</label><input type="url" id="fYoutube" placeholder="https://youtube.com/watch?v=..."></div>
+
+          <div class="save-row">
+            <button class="btn btn-brass" id="saveBtn">Save song</button>
+            <span class="save-msg" id="saveMsg"></span>
+          </div>
+        </div>
+      </div>
+
+      <div id="listCol">
+        <div class="songs-head">
+          <h2 class="display">Songs</h2>
+          <span class="songs-count" id="songsCount"></span>
+        </div>
+        <div class="public-note" id="publicNote">Anyone can view and play these — sign in as admin to add more.</div>
+        <div id="songsList"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ================================================================
+   EDIT THIS — paste your Firebase config from the console here
+   ================================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyALMvHmhkJwH48Jas5OMVUh2F4G-nK_-6c",
+  authDomain: "music-notes-b3602.firebaseapp.com",
+  projectId: "music-notes-b3602",
+  storageBucket: "music-notes-b3602.firebasestorage.app",
+  messagingSenderId: "492694624575",
+  appId: "1:492694624575:web:e5deda55271bbe3cf9db8a"
+};
+
+/* The ONLY Google account allowed to add/edit/delete songs */
+const ADMIN_EMAIL = "gosmaostan310@gmail.com";
+
+/* ================================================================ */
+
+const isConfigured = !firebaseConfig.apiKey.startsWith("PASTE_");
+if (isConfigured) {
+  document.getElementById('configBanner').style.display = 'none';
+  document.getElementById('mainGrid').style.display = 'grid';
+}
+
+let app, auth, db, storage;
+if (isConfigured) {
+  app = firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  storage = firebase.storage();
+}
+
+const el = id => document.getElementById(id);
+let isAdmin = false;
+let pendingPdf = null; // {file}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function renderAuthArea(user){
+  const area = el('authArea');
+  if (user && isAdmin) {
+    area.innerHTML = '';
+    const chip = document.createElement('div');
+    chip.className = 'userchip';
+    chip.innerHTML = `
+      <div class="avatar">${escapeHtml((user.displayName||'A')[0].toUpperCase())}</div>
+      <div>
+        <div style="font-size:13.5px;font-weight:600;">${escapeHtml(user.displayName||'Admin')}</div>
+        <div style="font-size:11.5px;color:rgba(245,239,225,0.5);">${escapeHtml(user.email)} · admin</div>
+      </div>
+      <button class="btn btn-ghost" id="signOutBtn" style="margin-left:8px;">Sign out</button>
+    `;
+    area.appendChild(chip);
+    el('signOutBtn').addEventListener('click', () => auth.signOut());
+    el('topbarSub').textContent = 'Signed in as admin — add, edit or remove songs';
+    el('adminPanel').style.display = 'block';
+    el('publicNote').style.display = 'none';
+  } else {
+    area.innerHTML = '<button class="btn btn-brass" id="signInBtn">Sign in with Google</button>';
+    el('signInBtn').addEventListener('click', signIn);
+    el('topbarSub').textContent = 'Browse sheet music — anyone can view';
+    el('adminPanel').style.display = 'none';
+    el('publicNote').style.display = 'block';
+  }
+}
+
+function signIn(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(e => {
+    alert('Sign-in failed: ' + e.message);
+  });
+}
+
+if (isConfigured) {
+  auth.onAuthStateChanged(user => {
+    if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      isAdmin = true;
+      renderAuthArea(user);
+    } else if (user) {
+      // Signed in with a non-admin Google account — not allowed to manage songs.
+      isAdmin = false;
+      auth.signOut();
+      alert("That Google account isn't authorized to manage songs. You can still browse as a visitor.");
+    } else {
+      isAdmin = false;
+      renderAuthArea(null);
+    }
+  });
+
+  db.collection('songs').orderBy('createdAt', 'desc').onSnapshot(snap => {
+    const songs = [];
+    snap.forEach(doc => songs.push({ id: doc.id, ...doc.data() }));
+    renderSongs(songs);
+  }, err => {
+    el('songsList').innerHTML = `<div class="empty">Couldn't load songs: ${escapeHtml(err.message)}</div>`;
+  });
+}
+
+function renderSongs(songs){
+  const list = el('songsList');
+  el('songsCount').textContent = songs.length ? (songs.length + (songs.length===1?' song':' songs')) : '';
+  if(!songs.length){
+    list.innerHTML = '<div class="empty">No songs yet. Sign in as admin to add the first one.</div>';
+    return;
+  }
+  list.innerHTML = songs.map(s => `
+    <div class="song-card">
+      <div class="staff-rule"></div>
+      <div class="song-main">
+        <div>
+          <div class="song-title">${escapeHtml(s.title || 'Untitled')}</div>
+          <div class="song-meta">
+            ${s.artist ? `<b>Artist</b> · ${escapeHtml(s.artist)}<br>` : ''}
+            ${s.album ? `<b>Album</b> · ${escapeHtml(s.album)}<br>` : ''}
+            ${s.director ? `<b>Music director</b> · ${escapeHtml(s.director)}` : ''}
+          </div>
+        </div>
+        <div class="song-actions">
+          ${s.pdfUrl ? `<a class="link-btn link-pdf" href="${s.pdfUrl}" target="_blank" rel="noopener">View PDF</a>` : `<span class="link-btn link-disabled">No PDF</span>`}
+          ${s.youtube ? `<a class="link-btn link-yt" href="${escapeHtml(s.youtube)}" target="_blank" rel="noopener">YouTube</a>` : `<span class="link-btn link-disabled">No link</span>`}
+          ${isAdmin ? `<button class="btn-danger" data-id="${s.id}" data-path="${s.pdfPath||''}">Delete</button>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  if (isAdmin) {
+    list.querySelectorAll('.btn-danger').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id, path = btn.dataset.path;
+        try {
+          await db.collection('songs').doc(id).delete();
+          if (path) { await storage.ref(path).delete().catch(()=>{}); }
+        } catch(e) {
+          alert('Delete failed: ' + e.message);
+        }
+      });
+    });
+  }
+}
+
+el('pdfInput')?.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') {
+    el('saveMsg').textContent = 'Please choose a PDF file.';
+    el('saveMsg').className = 'save-msg err';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    el('saveMsg').textContent = 'PDF is too large (keep it under 10 MB).';
+    el('saveMsg').className = 'save-msg err';
+    return;
+  }
+  pendingPdf = file;
+  el('filedropLabel').innerHTML = `✅ ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
+  el('filedrop').classList.add('has-file');
+});
+
+el('saveBtn')?.addEventListener('click', async () => {
+  const title = el('fTitle').value.trim();
+  const artist = el('fArtist').value.trim();
+  const album = el('fAlbum').value.trim();
+  const director = el('fDirector').value.trim();
+  const youtube = el('fYoutube').value.trim();
+
+  if (!title) { el('saveMsg').textContent = 'Song title is required.'; el('saveMsg').className = 'save-msg err'; return; }
+  if (!pendingPdf) { el('saveMsg').textContent = 'Please upload the PDF notes first.'; el('saveMsg').className = 'save-msg err'; return; }
+
+  el('saveBtn').disabled = true;
+  el('saveMsg').textContent = 'Uploading…';
+  el('saveMsg').className = 'save-msg';
+
+  try {
+    const path = 'pdfs/' + Date.now() + '_' + pendingPdf.name;
+    const ref = storage.ref(path);
+    await ref.put(pendingPdf);
+    const url = await ref.getDownloadURL();
+
+    await db.collection('songs').add({
+      title, artist, album, director, youtube,
+      pdfUrl: url,
+      pdfPath: path,
+      pdfName: pendingPdf.name,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    el('saveMsg').textContent = 'Saved!';
+    el('fTitle').value=''; el('fArtist').value=''; el('fAlbum').value='';
+    el('fDirector').value=''; el('fYoutube').value=''; el('pdfInput').value='';
+    pendingPdf = null;
+    el('filedropLabel').innerHTML = '📄 Click to choose a PDF<br><span style="font-size:11.5px;">Piano / guitar notes</span>';
+    el('filedrop').classList.remove('has-file');
+  } catch(e) {
+    el('saveMsg').textContent = 'Save failed: ' + e.message;
+    el('saveMsg').className = 'save-msg err';
+  } finally {
+    el('saveBtn').disabled = false;
+    setTimeout(()=>{ el('saveMsg').textContent=''; }, 3000);
+  }
+});
+
+if (!isConfigured) {
+  el('signInBtn')?.addEventListener('click', () => {
+    alert('Add your Firebase config first — see the banner above.');
+  });
+}
+</script>
+
+</body>
+</html>
