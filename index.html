@@ -124,8 +124,8 @@
       <div class="panel" id="adminPanel" style="display:none;">
         <div class="staff-rule"></div>
         <div class="panel-body">
-          <h2>Add a song</h2>
-          <div class="sub">Only visible to you, the admin.</div>
+          <h2 id="formHeading">Add a song</h2>
+          <div class="sub" id="formSub">Visible to anyone signed in with Google.</div>
 
           <div class="filedrop" id="filedrop">
             <label class="filedrop-label" for="pdfInput" id="filedropLabel">
@@ -142,6 +142,7 @@
 
           <div class="save-row">
             <button class="btn btn-brass" id="saveBtn">Save song</button>
+            <button class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Cancel edit</button>
             <span class="save-msg" id="saveMsg"></span>
           </div>
         </div>
@@ -152,7 +153,7 @@
           <h2 class="display">Songs</h2>
           <span class="songs-count" id="songsCount"></span>
         </div>
-        <div class="public-note" id="publicNote">Anyone can view and play these — sign in as admin to add more.</div>
+        <div class="public-note" id="publicNote">Anyone can view and play these — sign in with Google to add more.</div>
         <div id="songsList"></div>
       </div>
     </div>
@@ -186,29 +187,54 @@ if (isConfigured) {
 
 const el = id => document.getElementById(id);
 let isAdmin = false;
+let isSignedIn = false;
 let pendingPdf = null;
+let editingId = null;          // null = adding a new song, otherwise the doc id being edited
+let editingExistingPdf = null; // { pdfData, pdfName } kept when editing without re-uploading a PDF
+let pendingGoogleProfile = null; // decoded from the Google ID token, used as a reliable email source
+let lastSongs = []; // cache of the most recent Firestore snapshot, for re-rendering on auth change
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-function renderAuthArea(user){
+// Firebase's user.email can come back null in some setups. The Google ID
+// token itself always carries the email in its payload, so decode it
+// directly as a reliable fallback / source of truth.
+function decodeJwt(token){
+  try {
+    const payload = token.split('.')[1];
+    const json = decodeURIComponent(atob(payload.replace(/-/g,'+').replace(/_/g,'/'))
+      .split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(json);
+  } catch(e) {
+    return null;
+  }
+}
+
+function renderAuthArea(user, profileEmail){
   const area = el('authArea');
-  if (user && isAdmin) {
+  if (user && isSignedIn) {
+    const displayName = user.displayName || (pendingGoogleProfile && pendingGoogleProfile.name) || 'You';
+    const displayEmail = profileEmail || 'signed in';
     area.innerHTML = '';
     const chip = document.createElement('div');
     chip.className = 'userchip';
     chip.innerHTML = `
-      <div class="avatar">${escapeHtml((user.displayName||'A')[0].toUpperCase())}</div>
+      <div class="avatar">${escapeHtml((displayName)[0].toUpperCase())}</div>
       <div>
-        <div style="font-size:13.5px;font-weight:600;">${escapeHtml(user.displayName||'Admin')}</div>
-        <div style="font-size:11.5px;color:rgba(245,239,225,0.5);">${escapeHtml(user.email)} · admin</div>
+        <div style="font-size:13.5px;font-weight:600;">${escapeHtml(displayName)}</div>
+        <div style="font-size:11.5px;color:rgba(245,239,225,0.5);">${escapeHtml(displayEmail)}${isAdmin ? ' · admin' : ''}</div>
       </div>
       <button class="btn btn-ghost" id="signOutBtn" style="margin-left:8px;">Sign out</button>
     `;
     area.appendChild(chip);
     el('signOutBtn').addEventListener('click', () => auth.signOut());
-    el('topbarSub').textContent = 'Signed in as admin — add, edit or remove songs';
+    el('topbarSub').textContent = isAdmin
+      ? 'Signed in as admin — add, edit or remove songs'
+      : 'Signed in — add new songs';
+    el('formHeading').textContent = 'Add a song';
+    el('formSub').textContent = isAdmin ? 'You can also edit or remove any song below.' : 'Visible to anyone signed in with Google.';
     el('adminPanel').style.display = 'block';
     el('publicNote').style.display = 'none';
   } else {
@@ -221,6 +247,7 @@ function renderAuthArea(user){
 }
 
 function handleCredentialResponse(response){
+  pendingGoogleProfile = decodeJwt(response.credential);
   const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
   auth.signInWithCredential(credential).catch(e => {
     alert('Sign-in failed: ' + e.message);
@@ -280,16 +307,20 @@ function renderGisButton(){
 
 if (isConfigured) {
   auth.onAuthStateChanged(user => {
-    if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      isAdmin = true;
-      renderAuthArea(user);
-    } else if (user) {
-      isAdmin = false;
-      const attemptedEmail = user.email;
-      auth.signOut();
-      alert("That Google account isn't authorized to manage songs.\n\nSigned in as: " + attemptedEmail + "\nExpected admin: " + ADMIN_EMAIL + "\n\nYou can still browse as a visitor.");
+    if (user) {
+      isSignedIn = true;
+      // user.email can be null in some Firebase/GIS setups; fall back to
+      // the email decoded straight from the Google ID token.
+      const profileEmail = user.email || (pendingGoogleProfile && pendingGoogleProfile.email) || '';
+      isAdmin = !!profileEmail && profileEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      renderAuthArea(user, profileEmail);
+      renderSongs(lastSongs); // re-render so admin-only buttons show/hide correctly
     } else {
+      isSignedIn = false;
       isAdmin = false;
+      editingId = null;
+      editingExistingPdf = null;
+      pendingGoogleProfile = null;
       renderAuthArea(null);
     }
   });
@@ -297,6 +328,7 @@ if (isConfigured) {
   db.collection('songs').orderBy('createdAt', 'desc').onSnapshot(snap => {
     const songs = [];
     snap.forEach(doc => songs.push({ id: doc.id, ...doc.data() }));
+    lastSongs = songs;
     renderSongs(songs);
   }, err => {
     el('songsList').innerHTML = `<div class="empty">Couldn't load songs: ${escapeHtml(err.message)}</div>`;
@@ -307,7 +339,7 @@ function renderSongs(songs){
   const list = el('songsList');
   el('songsCount').textContent = songs.length ? (songs.length + (songs.length===1?' song':' songs')) : '';
   if(!songs.length){
-    list.innerHTML = '<div class="empty">No songs yet. Sign in as admin to add the first one.</div>';
+    list.innerHTML = '<div class="empty">No songs yet. Sign in to add the first one.</div>';
     return;
   }
   list.innerHTML = songs.map(s => `
@@ -325,6 +357,7 @@ function renderSongs(songs){
         <div class="song-actions">
           ${s.pdfData ? `<a class="link-btn link-pdf" href="${s.pdfData}" download="${escapeHtml(s.pdfName||'notes.pdf')}">View PDF</a>` : `<span class="link-btn link-disabled">No PDF</span>`}
           ${s.youtube ? `<a class="link-btn link-yt" href="${escapeHtml(s.youtube)}" target="_blank" rel="noopener">YouTube</a>` : `<span class="link-btn link-disabled">No link</span>`}
+          ${isAdmin ? `<button class="btn btn-ghost" data-edit-id="${s.id}" style="padding:7px 12px;font-size:13px;">Edit</button>` : ''}
           ${isAdmin ? `<button class="btn-danger" data-id="${s.id}">Delete</button>` : ''}
         </div>
       </div>
@@ -335,15 +368,63 @@ function renderSongs(songs){
     list.querySelectorAll('.btn-danger').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
+        if (!confirm('Delete this song? This cannot be undone.')) return;
         try {
           await db.collection('songs').doc(id).delete();
+          if (editingId === id) resetForm();
         } catch(e) {
           alert('Delete failed: ' + e.message);
         }
       });
     });
+    list.querySelectorAll('[data-edit-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const song = songs.find(s => s.id === btn.dataset.editId);
+        if (song) startEdit(song);
+      });
+    });
   }
 }
+
+function startEdit(song){
+  editingId = song.id;
+  editingExistingPdf = song.pdfData ? { pdfData: song.pdfData, pdfName: song.pdfName } : null;
+  pendingPdf = null;
+
+  el('fTitle').value = song.title || '';
+  el('fArtist').value = song.artist || '';
+  el('fAlbum').value = song.album || '';
+  el('fDirector').value = song.director || '';
+  el('fYoutube').value = song.youtube || '';
+
+  el('filedropLabel').innerHTML = song.pdfName
+    ? `📄 Keeping: ${escapeHtml(song.pdfName)}<br><span style="font-size:11.5px;">Click to replace</span>`
+    : '📄 Click to choose a PDF<br><span style="font-size:11.5px;">Piano / guitar notes</span>';
+  el('filedrop').classList.toggle('has-file', !!song.pdfName);
+
+  el('formHeading').textContent = 'Edit song';
+  el('formSub').textContent = 'Updating an existing entry.';
+  el('saveBtn').textContent = 'Update song';
+  el('cancelEditBtn').style.display = 'inline-block';
+
+  el('adminPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetForm(){
+  editingId = null;
+  editingExistingPdf = null;
+  pendingPdf = null;
+  el('fTitle').value=''; el('fArtist').value=''; el('fAlbum').value='';
+  el('fDirector').value=''; el('fYoutube').value=''; el('pdfInput').value='';
+  el('filedropLabel').innerHTML = '📄 Click to choose a PDF<br><span style="font-size:11.5px;">Piano / guitar notes</span>';
+  el('filedrop').classList.remove('has-file');
+  el('formHeading').textContent = 'Add a song';
+  el('formSub').textContent = isAdmin ? 'You can also edit or remove any song below.' : 'Visible to anyone signed in with Google.';
+  el('saveBtn').textContent = 'Save song';
+  el('cancelEditBtn').style.display = 'none';
+}
+
+el('cancelEditBtn')?.addEventListener('click', resetForm);
 
 el('pdfInput')?.addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -372,6 +453,9 @@ el('pdfInput')?.addEventListener('change', (e) => {
 });
 
 el('saveBtn')?.addEventListener('click', async () => {
+  if (!isSignedIn) { el('saveMsg').textContent = 'Please sign in first.'; el('saveMsg').className = 'save-msg err'; return; }
+  if (editingId && !isAdmin) { el('saveMsg').textContent = 'Only the admin can edit songs.'; el('saveMsg').className = 'save-msg err'; return; }
+
   const title = el('fTitle').value.trim();
   const artist = el('fArtist').value.trim();
   const album = el('fAlbum').value.trim();
@@ -379,26 +463,32 @@ el('saveBtn')?.addEventListener('click', async () => {
   const youtube = el('fYoutube').value.trim();
 
   if (!title) { el('saveMsg').textContent = 'Song title is required.'; el('saveMsg').className = 'save-msg err'; return; }
-  if (!pendingPdf) { el('saveMsg').textContent = 'Please upload the PDF notes first.'; el('saveMsg').className = 'save-msg err'; return; }
+
+  // Need a PDF from somewhere: a freshly chosen file, or (when editing) the
+  // one already attached to this song.
+  const pdfData = pendingPdf ? pendingPdf.dataUrl : (editingExistingPdf ? editingExistingPdf.pdfData : null);
+  const pdfName = pendingPdf ? pendingPdf.name : (editingExistingPdf ? editingExistingPdf.pdfName : null);
+  if (!pdfData) { el('saveMsg').textContent = 'Please upload the PDF notes first.'; el('saveMsg').className = 'save-msg err'; return; }
 
   el('saveBtn').disabled = true;
-  el('saveMsg').textContent = 'Saving…';
+  el('saveMsg').textContent = editingId ? 'Updating…' : 'Saving…';
   el('saveMsg').className = 'save-msg';
 
   try {
-    await db.collection('songs').add({
-      title, artist, album, director, youtube,
-      pdfData: pendingPdf.dataUrl,
-      pdfName: pendingPdf.name,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    el('saveMsg').textContent = 'Saved!';
-    el('fTitle').value=''; el('fArtist').value=''; el('fAlbum').value='';
-    el('fDirector').value=''; el('fYoutube').value=''; el('pdfInput').value='';
-    pendingPdf = null;
-    el('filedropLabel').innerHTML = '📄 Click to choose a PDF<br><span style="font-size:11.5px;">Piano / guitar notes</span>';
-    el('filedrop').classList.remove('has-file');
+    if (editingId) {
+      await db.collection('songs').doc(editingId).update({
+        title, artist, album, director, youtube, pdfData, pdfName
+      });
+      el('saveMsg').textContent = 'Updated!';
+    } else {
+      await db.collection('songs').add({
+        title, artist, album, director, youtube, pdfData, pdfName,
+        createdBy: (pendingGoogleProfile && pendingGoogleProfile.email) || null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      el('saveMsg').textContent = 'Saved!';
+    }
+    resetForm();
   } catch(e) {
     el('saveMsg').textContent = 'Save failed: ' + e.message;
     el('saveMsg').className = 'save-msg err';
