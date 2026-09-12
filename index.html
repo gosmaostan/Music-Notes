@@ -95,6 +95,8 @@
   .link-disabled{ background:#e6ded0; color:#a39a86; pointer-events:none; }
   .btn-danger{ background:transparent; color:#A24936; border:1px solid rgba(162,73,54,0.35);
     padding:7px 12px; font-size:13px; border-radius:7px; }
+  .btn-edit{ background:transparent; color:var(--teal); border:1px solid rgba(62,107,110,0.4);
+    padding:7px 12px; font-size:13px; border-radius:7px; font-weight:600; }
   .empty{ background:rgba(245,239,225,0.05); border:1px dashed rgba(245,239,225,0.2); border-radius:12px;
     padding:34px 20px; text-align:center; color:rgba(245,239,225,0.55); font-size:14px; }
   .public-note{ margin-bottom:16px; font-size:13px; color:rgba(245,239,225,0.55); }
@@ -357,7 +359,7 @@ function renderSongs(songs){
         <div class="song-actions">
           ${s.pdfData ? `<a class="link-btn link-pdf" href="${s.pdfData}" download="${escapeHtml(s.pdfName||'notes.pdf')}">View PDF</a>` : `<span class="link-btn link-disabled">No PDF</span>`}
           ${s.youtube ? `<a class="link-btn link-yt" href="${escapeHtml(s.youtube)}" target="_blank" rel="noopener">YouTube</a>` : `<span class="link-btn link-disabled">No link</span>`}
-          ${isAdmin ? `<button class="btn btn-ghost" data-edit-id="${s.id}" style="padding:7px 12px;font-size:13px;">Edit</button>` : ''}
+          ${isAdmin ? `<button class="btn-edit" data-edit-id="${s.id}">Edit</button>` : ''}
           ${isAdmin ? `<button class="btn-danger" data-id="${s.id}">Delete</button>` : ''}
         </div>
       </div>
