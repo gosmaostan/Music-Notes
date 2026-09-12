@@ -55,6 +55,13 @@
   .banner{ background: rgba(200,155,74,0.12); border:1px solid rgba(200,155,74,0.3);
     border-radius:10px; padding:14px 18px; font-size:13.5px; color:#EBD9AE; margin-bottom:24px; }
 
+  /* Category tabs */
+  .tabs{ display:flex; gap:10px; margin-bottom:26px; flex-wrap:wrap; }
+  .tab-btn{ background:rgba(245,239,225,0.06); color:rgba(245,239,225,0.7);
+    border:1px solid rgba(245,239,225,0.15); border-radius:9px; padding:11px 20px;
+    font-size:14.5px; font-weight:600; font-family:'Inter',sans-serif; }
+  .tab-btn.active{ background:var(--brass); color:#1a1400; border-color:var(--brass); }
+
   .grid{ display:grid; grid-template-columns:380px 1fr; gap:28px; align-items:start; }
   @media (max-width:860px){ .grid{ grid-template-columns:1fr; } }
 
@@ -65,31 +72,45 @@
   .panel .sub{ font-size:13px; color:#6b6455; margin-bottom:18px; }
   .field2{ margin-bottom:14px; }
   .field2 label{ display:block; font-size:12.5px; font-weight:600; color:#5c5647; margin-bottom:5px; }
-  .field2 input{ width:100%; padding:10px 12px; border-radius:7px; border:1px solid rgba(30,27,22,0.18);
-    font-size:14px; background:#fffefb; }
-  .field2 input:focus{ outline:2px solid var(--brass); outline-offset:1px; }
-  .filedrop{ border:1.5px dashed rgba(30,27,22,0.28); border-radius:9px; padding:18px 14px;
-    text-align:center; font-size:13px; color:#6b6455; margin-bottom:16px; background:#fffefb; }
+  .field2 input, .field2 textarea, .field2 select{ width:100%; padding:10px 12px; border-radius:7px;
+    border:1px solid rgba(30,27,22,0.18); font-size:14px; background:#fffefb; font-family:'Inter',sans-serif; }
+  .field2 textarea{ resize:vertical; min-height:110px; line-height:1.5; }
+  .field2 input:focus, .field2 textarea:focus{ outline:2px solid var(--brass); outline-offset:1px; }
+  .filedrop{ border:1.5px dashed rgba(30,27,22,0.28); border-radius:9px; padding:16px 14px;
+    text-align:center; font-size:13px; color:#6b6455; margin-bottom:14px; background:#fffefb; }
   .filedrop.has-file{ border-style:solid; border-color:var(--teal); color:var(--ink); }
   .filedrop input{ display:none; }
   .filedrop-label{ display:block; cursor:pointer; }
-  .save-row{ display:flex; gap:10px; align-items:center; margin-top:18px; }
+  .save-row{ display:flex; gap:10px; align-items:center; margin-top:18px; flex-wrap:wrap; }
   .save-msg{ font-size:12.5px; color:var(--teal); }
   .save-msg.err{ color:var(--red); }
+  .seg{ display:flex; gap:0; margin-bottom:14px; border:1px solid rgba(30,27,22,0.18); border-radius:7px; overflow:hidden; }
+  .seg button{ flex:1; padding:8px 10px; font-size:12.5px; font-weight:600; border:none;
+    background:#fffefb; color:#6b6455; }
+  .seg button.active{ background:var(--teal); color:#fff; }
 
-  .songs-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; }
+  .songs-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
   .songs-head h2{ color:var(--paper); }
   .songs-count{ font-size:13px; color:rgba(245,239,225,0.5); }
+  .filters-row{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .filters-row select{ padding:8px 12px; border-radius:7px; border:1px solid rgba(245,239,225,0.25);
+    background:rgba(245,239,225,0.07); color:var(--paper); font-size:13px; font-family:'Inter',sans-serif; }
+  .filters-row select option{ color:#000; }
+
   .song-card{ background:var(--paper); color:var(--ink); border-radius:12px; margin-bottom:16px;
     overflow:hidden; box-shadow:0 8px 22px rgba(0,0,0,0.22); }
   .song-card .staff-rule{ height:16px; }
   .song-main{ padding:16px 20px 18px; display:flex; justify-content:space-between; gap:16px; }
+  .song-thumb{ width:56px; height:56px; border-radius:8px; object-fit:cover; flex-shrink:0;
+    background:#e6ded0; }
+  .song-title-row{ display:flex; gap:12px; align-items:flex-start; }
   .song-title{ font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin:0 0 6px; }
   .song-meta{ font-size:13px; color:#5c5647; line-height:1.7; }
   .song-meta b{ color:#3a362c; }
+  .song-date{ font-size:11.5px; color:#a39a86; margin-top:4px; }
   .song-actions{ display:flex; flex-direction:column; gap:8px; align-items:flex-end; flex-shrink:0; }
   .link-btn{ font-size:13px; font-weight:600; text-decoration:none; padding:7px 13px; border-radius:7px;
-    display:inline-block; text-align:center; white-space:nowrap; }
+    display:inline-block; text-align:center; white-space:nowrap; border:none; font-family:'Inter',sans-serif; }
   .link-pdf{ background:var(--brass); color:#1a1400; }
   .link-yt{ background:var(--teal); color:#fff; }
   .link-disabled{ background:#e6ded0; color:#a39a86; pointer-events:none; }
@@ -100,6 +121,24 @@
   .empty{ background:rgba(245,239,225,0.05); border:1px dashed rgba(245,239,225,0.2); border-radius:12px;
     padding:34px 20px; text-align:center; color:rgba(245,239,225,0.55); font-size:14px; }
   .public-note{ margin-bottom:16px; font-size:13px; color:rgba(245,239,225,0.55); }
+
+  /* Modal */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(10,10,10,0.75); display:none;
+    align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .modal-overlay.open{ display:flex; }
+  .modal-box{ background:var(--paper); color:var(--ink); border-radius:14px; width:100%;
+    max-width:820px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px; border-bottom:1px solid rgba(30,27,22,0.12); }
+  .modal-head h3{ margin:0; font-family:'Fraunces',serif; font-size:17px; }
+  .modal-close{ background:transparent; border:none; font-size:22px; line-height:1; color:#6b6455; }
+  .modal-body{ padding:0; flex:1; overflow:auto; background:#2b2b2b; }
+  .modal-body.text-mode{ background:#fffefb; padding:22px 24px; white-space:pre-wrap;
+    font-size:14.5px; line-height:1.8; color:var(--ink); }
+  .modal-body iframe{ width:100%; height:75vh; border:none; display:block; }
+  .modal-foot{ padding:12px 20px; border-top:1px solid rgba(30,27,22,0.12); background:var(--paper);
+    display:flex; justify-content:flex-end; gap:10px; }
 </style>
 </head>
 <body>
@@ -122,42 +161,98 @@
       ⚠️ This page hasn't been connected to Firebase yet. Open this file's &lt;script&gt; section and paste in your <code>firebaseConfig</code> values and your admin email — see the comments marked <code>EDIT THIS</code>.
     </div>
 
-    <div class="grid" id="mainGrid" style="display:none;">
-      <div class="panel" id="adminPanel" style="display:none;">
-        <div class="staff-rule"></div>
-        <div class="panel-body">
-          <h2 id="formHeading">Add a song</h2>
-          <div class="sub" id="formSub">Visible to anyone signed in with Google.</div>
+    <div id="mainGrid" style="display:none;">
 
-          <div class="filedrop" id="filedrop">
-            <label class="filedrop-label" for="pdfInput" id="filedropLabel">
-              📄 Click to choose a PDF<br><span style="font-size:11.5px;">Piano / guitar notes</span>
-            </label>
-            <input type="file" id="pdfInput" accept="application/pdf">
-          </div>
-
-          <div class="field2"><label>Song title</label><input type="text" id="fTitle" placeholder="e.g. Kannaalane"></div>
-          <div class="field2"><label>Artist</label><input type="text" id="fArtist" placeholder="e.g. Hariharan"></div>
-          <div class="field2"><label>Album</label><input type="text" id="fAlbum" placeholder="e.g. Bombay"></div>
-          <div class="field2"><label>Music director</label><input type="text" id="fDirector" placeholder="e.g. A.R. Rahman"></div>
-          <div class="field2"><label>YouTube link</label><input type="url" id="fYoutube" placeholder="https://youtube.com/watch?v=..."></div>
-
-          <div class="save-row">
-            <button class="btn btn-brass" id="saveBtn">Save song</button>
-            <button class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Cancel edit</button>
-            <span class="save-msg" id="saveMsg"></span>
-          </div>
-        </div>
+      <div class="tabs" id="categoryTabs">
+        <button class="tab-btn active" data-cat="lyrics">Song Lyrics</button>
+        <button class="tab-btn" data-cat="piano">Piano Notes</button>
+        <button class="tab-btn" data-cat="guitar">Guitar Notes</button>
       </div>
 
-      <div id="listCol">
-        <div class="songs-head">
-          <h2 class="display">Songs</h2>
-          <span class="songs-count" id="songsCount"></span>
+      <div class="grid">
+        <div class="panel" id="adminPanel" style="display:none;">
+          <div class="staff-rule"></div>
+          <div class="panel-body">
+            <h2 id="formHeading">Add lyrics</h2>
+            <div class="sub" id="formSub">Visible to anyone signed in with Google.</div>
+
+            <div class="field2"><label>Title</label><input type="text" id="fTitle" placeholder="e.g. Kannaalane"></div>
+            <div class="field2"><label>Artist</label><input type="text" id="fArtist" placeholder="e.g. Hariharan"></div>
+            <div class="field2"><label>Album</label><input type="text" id="fAlbum" placeholder="e.g. Bombay"></div>
+
+            <div class="field2">
+              <label>Image</label>
+              <div class="seg" id="imageSeg">
+                <button type="button" class="active" data-mode="url">Image URL</button>
+                <button type="button" data-mode="upload">Upload from device</button>
+              </div>
+              <input type="url" id="fImageUrl" placeholder="https://...jpg">
+              <div class="filedrop" id="imgFiledrop" style="display:none;margin-top:8px;">
+                <label class="filedrop-label" for="imgInput" id="imgFiledropLabel">
+                  🖼️ Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>
+                </label>
+                <input type="file" id="imgInput" accept="image/*">
+              </div>
+            </div>
+
+            <!-- Lyrics-only field -->
+            <div class="field2" id="lyricsField">
+              <label>Lyrics text</label>
+              <textarea id="fLyrics" placeholder="Paste the full lyrics here..."></textarea>
+            </div>
+
+            <!-- Piano/Guitar-only fields -->
+            <div id="notesFields" style="display:none;">
+              <div class="field2">
+                <label>Notes content</label>
+                <div class="seg" id="notesSeg">
+                  <button type="button" class="active" data-mode="pdf">Upload PDF</button>
+                  <button type="button" data-mode="text">Type as text</button>
+                </div>
+                <div class="filedrop" id="pdfFiledrop">
+                  <label class="filedrop-label" for="pdfInput" id="pdfFiledropLabel">
+                    📄 Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>
+                  </label>
+                  <input type="file" id="pdfInput" accept="application/pdf">
+                </div>
+                <textarea id="fNotesText" style="display:none;" placeholder="Type chords / notation here..."></textarea>
+              </div>
+            </div>
+
+            <div class="field2"><label>YouTube link</label><input type="url" id="fYoutube" placeholder="https://youtube.com/watch?v=..."></div>
+
+            <div class="save-row">
+              <button class="btn btn-brass" id="saveBtn">Save</button>
+              <button class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Cancel edit</button>
+              <span class="save-msg" id="saveMsg"></span>
+            </div>
+          </div>
         </div>
-        <div class="public-note" id="publicNote">Anyone can view and play these — sign in with Google to add more.</div>
-        <div id="songsList"></div>
+
+        <div id="listCol">
+          <div class="songs-head">
+            <h2 class="display" id="listHeading">Song Lyrics</h2>
+            <span class="songs-count" id="songsCount"></span>
+          </div>
+          <div class="public-note" id="publicNote">Anyone can view and play these — sign in with Google to add more.</div>
+          <div class="filters-row">
+            <select id="filterArtist"><option value="">All artists</option></select>
+            <select id="filterAlbum"><option value="">All albums</option></select>
+          </div>
+          <div id="songsList"></div>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modalTitle">Preview</h3>
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot" id="modalFoot" style="display:none;"></div>
     </div>
   </div>
 
@@ -177,7 +272,7 @@ const GOOGLE_CLIENT_ID = "492694624575-j647l8lcva2r55m4apvh8ni8ki4vqqut.apps.goo
 const isConfigured = !firebaseConfig.apiKey.startsWith("PASTE_");
 if (isConfigured) {
   document.getElementById('configBanner').style.display = 'none';
-  document.getElementById('mainGrid').style.display = 'grid';
+  document.getElementById('mainGrid').style.display = 'block';
 }
 
 let app, auth, db;
@@ -188,31 +283,55 @@ if (isConfigured) {
 }
 
 const el = id => document.getElementById(id);
+const COLLECTIONS = { lyrics: 'lyrics', piano: 'piano_notes', guitar: 'guitar_notes' };
+const CATEGORY_LABELS = { lyrics: 'Song Lyrics', piano: 'Piano Notes', guitar: 'Guitar Notes' };
+
 let isAdmin = false;
 let isSignedIn = false;
-let pendingPdf = null;
-let editingId = null;          // null = adding a new song, otherwise the doc id being edited
-let editingExistingPdf = null; // { pdfData, pdfName } kept when editing without re-uploading a PDF
-let pendingGoogleProfile = null; // decoded from the Google ID token, used as a reliable email source
-let lastSongs = []; // cache of the most recent Firestore snapshot, for re-rendering on auth change
+let currentCategory = 'lyrics';
+let pendingGoogleProfile = null;
+let entriesCache = { lyrics: [], piano: [], guitar: [] };
+let filters = {
+  lyrics: { artist: '', album: '' },
+  piano: { artist: '', album: '' },
+  guitar: { artist: '', album: '' }
+};
+
+let editingId = null;        // doc id being edited, or null when adding new
+let editingCategory = null;  // category of the entry being edited
+let imageMode = 'url';       // 'url' | 'upload'
+let notesMode = 'pdf';       // 'pdf' | 'text'  (piano/guitar only)
+let pendingImage = null;     // { dataUrl, name } when uploading an image
+let existingImageUrl = null; // kept when editing without changing the image
+let pendingPdf = null;       // { dataUrl, name } when uploading a PDF
+let existingPdf = null;      // { pdfData, pdfName } kept when editing without re-uploading
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-// Firebase's user.email can come back null in some setups. The Google ID
-// token itself always carries the email in its payload, so decode it
-// directly as a reliable fallback / source of truth.
 function decodeJwt(token){
   try {
     const payload = token.split('.')[1];
     const json = decodeURIComponent(atob(payload.replace(/-/g,'+').replace(/_/g,'/'))
       .split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
     return JSON.parse(json);
-  } catch(e) {
-    return null;
-  }
+  } catch(e) { return null; }
 }
+
+function formatDate(ts){
+  if (!ts || !ts.toDate) return 'Just now';
+  const d = ts.toDate();
+  return d.toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+}
+
+function youtubeId(url){
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|v=|\/embed\/)([A-Za-z0-9_-]{6,})/);
+  return m ? m[1] : null;
+}
+
+/* ---------- Auth ---------- */
 
 function renderAuthArea(user, profileEmail){
   const area = el('authArea');
@@ -232,13 +351,10 @@ function renderAuthArea(user, profileEmail){
     `;
     area.appendChild(chip);
     el('signOutBtn').addEventListener('click', () => auth.signOut());
-    el('topbarSub').textContent = isAdmin
-      ? 'Signed in as admin — add, edit or remove songs'
-      : 'Signed in — add new songs';
-    el('formHeading').textContent = 'Add a song';
-    el('formSub').textContent = isAdmin ? 'You can also edit or remove any song below.' : 'Visible to anyone signed in with Google.';
+    el('topbarSub').textContent = isAdmin ? 'Signed in as admin — add, edit or remove entries' : 'Signed in — add new entries';
     el('adminPanel').style.display = 'block';
     el('publicNote').style.display = 'none';
+    renderFormForCategory(currentCategory);
   } else {
     area.innerHTML = '<div id="gisBtn"></div>';
     renderGisButton();
@@ -251,43 +367,22 @@ function renderAuthArea(user, profileEmail){
 function handleCredentialResponse(response){
   pendingGoogleProfile = decodeJwt(response.credential);
   const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
-  auth.signInWithCredential(credential).catch(e => {
-    alert('Sign-in failed: ' + e.message);
-  });
+  auth.signInWithCredential(credential).catch(e => alert('Sign-in failed: ' + e.message));
 }
 
 let gisReady = false;
-
 function initGis(){
   if (gisReady) return;
   if (!(window.google && window.google.accounts)) return;
   gisReady = true;
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse
-  });
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredentialResponse });
   renderGisButton();
 }
-
-// Callback fired by the GSI <script onload="...">
 window.__gisLoaded = function(){
-  if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
-    initGis();
-  }
+  if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) initGis();
 };
-
-// FIX: if the GSI script already finished loading (and fired onload)
-// before this block ran, __gisLoaded above never got called. Catch that
-// race here by checking the flag / the global directly, right now.
 if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
-  if (window.__gisScriptLoaded || (window.google && window.google.accounts)) {
-    initGis();
-  }
-}
-
-// Extra safety net: poll briefly in case neither of the above caught it
-// (e.g. slow network ordering). Stops as soon as it succeeds or after 5s.
-if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
+  if (window.__gisScriptLoaded || (window.google && window.google.accounts)) initGis();
   let tries = 0;
   const poll = setInterval(() => {
     tries++;
@@ -295,7 +390,6 @@ if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
     initGis();
   }, 200);
 }
-
 function renderGisButton(){
   const box = document.getElementById('gisBtn');
   if (!box) return;
@@ -311,166 +405,358 @@ if (isConfigured) {
   auth.onAuthStateChanged(user => {
     if (user) {
       isSignedIn = true;
-      // user.email can be null in some Firebase/GIS setups; fall back to
-      // the email decoded straight from the Google ID token.
       const profileEmail = user.email || (pendingGoogleProfile && pendingGoogleProfile.email) || '';
       isAdmin = !!profileEmail && profileEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
       renderAuthArea(user, profileEmail);
-      renderSongs(lastSongs); // re-render so admin-only buttons show/hide correctly
+      renderList();
     } else {
       isSignedIn = false;
       isAdmin = false;
-      editingId = null;
-      editingExistingPdf = null;
       pendingGoogleProfile = null;
+      resetForm();
       renderAuthArea(null);
+      renderList();
     }
   });
 
-  db.collection('songs').orderBy('createdAt', 'desc').onSnapshot(snap => {
-    const songs = [];
-    snap.forEach(doc => songs.push({ id: doc.id, ...doc.data() }));
-    lastSongs = songs;
-    renderSongs(songs);
-  }, err => {
-    el('songsList').innerHTML = `<div class="empty">Couldn't load songs: ${escapeHtml(err.message)}</div>`;
+  Object.keys(COLLECTIONS).forEach(cat => {
+    db.collection(COLLECTIONS[cat]).orderBy('createdAt', 'desc').onSnapshot(snap => {
+      const items = [];
+      snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+      entriesCache[cat] = items;
+      if (cat === currentCategory) { populateFilters(cat); renderList(); }
+    }, err => {
+      if (cat === currentCategory) {
+        el('songsList').innerHTML = `<div class="empty">Couldn't load: ${escapeHtml(err.message)}</div>`;
+      }
+    });
   });
 }
 
-function renderSongs(songs){
+/* ---------- Tabs ---------- */
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCategory = btn.dataset.cat;
+    el('listHeading').textContent = CATEGORY_LABELS[currentCategory];
+    resetForm();
+    renderFormForCategory(currentCategory);
+    populateFilters(currentCategory);
+    renderList();
+  });
+});
+
+function renderFormForCategory(cat){
+  if (!isSignedIn) return;
+  const isLyrics = cat === 'lyrics';
+  el('lyricsField').style.display = isLyrics ? 'block' : 'none';
+  el('notesFields').style.display = isLyrics ? 'none' : 'block';
+  el('formHeading').textContent = editingId ? ('Edit ' + (isLyrics ? 'lyrics' : cat + ' notes')) : ('Add ' + (isLyrics ? 'lyrics' : cat + ' notes'));
+  el('formSub').textContent = editingId
+    ? 'Updating an existing entry.'
+    : (isAdmin ? 'You can also edit or remove any entry below.' : 'Visible to anyone signed in with Google.');
+}
+
+/* ---------- Filters ---------- */
+
+function populateFilters(cat){
+  const items = entriesCache[cat] || [];
+  const artists = [...new Set(items.map(i => i.artist).filter(Boolean))].sort();
+  const albums = [...new Set(items.map(i => i.album).filter(Boolean))].sort();
+  const aSel = el('filterArtist'), bSel = el('filterAlbum');
+  const curA = filters[cat].artist, curB = filters[cat].album;
+  aSel.innerHTML = '<option value="">All artists</option>' + artists.map(a => `<option value="${escapeHtml(a)}" ${a===curA?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  bSel.innerHTML = '<option value="">All albums</option>' + albums.map(a => `<option value="${escapeHtml(a)}" ${a===curB?'selected':''}>${escapeHtml(a)}</option>`).join('');
+}
+
+el('filterArtist').addEventListener('change', e => { filters[currentCategory].artist = e.target.value; renderList(); });
+el('filterAlbum').addEventListener('change', e => { filters[currentCategory].album = e.target.value; renderList(); });
+
+/* ---------- List rendering ---------- */
+
+function renderList(){
+  const cat = currentCategory;
+  let items = entriesCache[cat] || [];
+  const f = filters[cat];
+  if (f.artist) items = items.filter(i => i.artist === f.artist);
+  if (f.album) items = items.filter(i => i.album === f.album);
+
   const list = el('songsList');
-  el('songsCount').textContent = songs.length ? (songs.length + (songs.length===1?' song':' songs')) : '';
-  if(!songs.length){
-    list.innerHTML = '<div class="empty">No songs yet. Sign in to add the first one.</div>';
+  el('songsCount').textContent = items.length ? (items.length + (items.length===1?' entry':' entries')) : '';
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty">No entries yet${f.artist||f.album ? ' for this filter' : ''}. ${isSignedIn ? 'Use the form to add one.' : 'Sign in to add the first one.'}</div>`;
     return;
   }
-  list.innerHTML = songs.map(s => `
+
+  list.innerHTML = items.map(s => {
+    const thumb = s.imageUrl ? `<img class="song-thumb" src="${escapeHtml(s.imageUrl)}" alt="">` : '';
+    const ytId = youtubeId(s.youtube);
+    let contentBtn = '';
+    if (cat === 'lyrics') {
+      contentBtn = s.lyricsText ? `<button class="link-btn link-pdf" data-view-text="${s.id}">View Lyrics</button>` : `<span class="link-btn link-disabled">No lyrics</span>`;
+    } else {
+      if (s.contentType === 'pdf' && s.pdfData) contentBtn = `<button class="link-btn link-pdf" data-view-pdf="${s.id}">View Notes</button>`;
+      else if (s.contentType === 'text' && s.notesText) contentBtn = `<button class="link-btn link-pdf" data-view-text="${s.id}">View Notes</button>`;
+      else contentBtn = `<span class="link-btn link-disabled">No notes</span>`;
+    }
+    const ytBtn = ytId ? `<button class="link-btn link-yt" data-view-yt="${s.id}">YouTube</button>` : `<span class="link-btn link-disabled">No link</span>`;
+    return `
     <div class="song-card">
       <div class="staff-rule"></div>
       <div class="song-main">
-        <div>
-          <div class="song-title">${escapeHtml(s.title || 'Untitled')}</div>
-          <div class="song-meta">
-            ${s.artist ? `<b>Artist</b> · ${escapeHtml(s.artist)}<br>` : ''}
-            ${s.album ? `<b>Album</b> · ${escapeHtml(s.album)}<br>` : ''}
-            ${s.director ? `<b>Music director</b> · ${escapeHtml(s.director)}` : ''}
+        <div class="song-title-row">
+          ${thumb}
+          <div>
+            <div class="song-title">${escapeHtml(s.title || 'Untitled')}</div>
+            <div class="song-meta">
+              ${s.artist ? `<b>Artist</b> · ${escapeHtml(s.artist)}<br>` : ''}
+              ${s.album ? `<b>Album</b> · ${escapeHtml(s.album)}` : ''}
+            </div>
+            <div class="song-date">Added ${formatDate(s.createdAt)}</div>
           </div>
         </div>
         <div class="song-actions">
-          ${s.pdfData ? `<a class="link-btn link-pdf" href="${s.pdfData}" download="${escapeHtml(s.pdfName||'notes.pdf')}">View PDF</a>` : `<span class="link-btn link-disabled">No PDF</span>`}
-          ${s.youtube ? `<a class="link-btn link-yt" href="${escapeHtml(s.youtube)}" target="_blank" rel="noopener">YouTube</a>` : `<span class="link-btn link-disabled">No link</span>`}
+          ${contentBtn}
+          ${ytBtn}
           ${isAdmin ? `<button class="btn-edit" data-edit-id="${s.id}">Edit</button>` : ''}
-          ${isAdmin ? `<button class="btn-danger" data-id="${s.id}">Delete</button>` : ''}
+          ${isAdmin ? `<button class="btn-danger" data-del-id="${s.id}">Delete</button>` : ''}
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
+  list.querySelectorAll('[data-view-pdf]').forEach(b => b.addEventListener('click', () => {
+    const s = items.find(i => i.id === b.dataset.viewPdf);
+    if (s) openPdfModal(s);
+  }));
+  list.querySelectorAll('[data-view-text]').forEach(b => b.addEventListener('click', () => {
+    const s = items.find(i => i.id === b.dataset.viewText);
+    if (s) openTextModal(s, cat);
+  }));
+  list.querySelectorAll('[data-view-yt]').forEach(b => b.addEventListener('click', () => {
+    const s = items.find(i => i.id === b.dataset.viewYt);
+    if (s) openYoutubeModal(s);
+  }));
   if (isAdmin) {
-    list.querySelectorAll('.btn-danger').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.id;
-        if (!confirm('Delete this song? This cannot be undone.')) return;
-        try {
-          await db.collection('songs').doc(id).delete();
-          if (editingId === id) resetForm();
-        } catch(e) {
-          alert('Delete failed: ' + e.message);
-        }
-      });
-    });
-    list.querySelectorAll('[data-edit-id]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const song = songs.find(s => s.id === btn.dataset.editId);
-        if (song) startEdit(song);
-      });
-    });
+    list.querySelectorAll('[data-edit-id]').forEach(b => b.addEventListener('click', () => {
+      const s = items.find(i => i.id === b.dataset.editId);
+      if (s) startEdit(s, cat);
+    }));
+    list.querySelectorAll('[data-del-id]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Delete this entry? This cannot be undone.')) return;
+      try {
+        await db.collection(COLLECTIONS[cat]).doc(b.dataset.delId).delete();
+        if (editingId === b.dataset.delId) resetForm();
+      } catch(e) { alert('Delete failed: ' + e.message); }
+    }));
   }
 }
 
-function startEdit(song){
-  editingId = song.id;
-  editingExistingPdf = song.pdfData ? { pdfData: song.pdfData, pdfName: song.pdfName } : null;
-  pendingPdf = null;
+/* ---------- Modal (view PDF / text / YouTube) ---------- */
 
-  el('fTitle').value = song.title || '';
-  el('fArtist').value = song.artist || '';
-  el('fAlbum').value = song.album || '';
-  el('fDirector').value = song.director || '';
-  el('fYoutube').value = song.youtube || '';
+function openModal(title){
+  el('modalTitle').textContent = title;
+  el('modalOverlay').classList.add('open');
+}
+function closeModal(){
+  el('modalOverlay').classList.remove('open');
+  el('modalBody').innerHTML = '';
+  el('modalBody').className = 'modal-body';
+  el('modalFoot').style.display = 'none';
+  el('modalFoot').innerHTML = '';
+}
+el('modalCloseBtn').addEventListener('click', closeModal);
+el('modalOverlay').addEventListener('click', e => { if (e.target.id === 'modalOverlay') closeModal(); });
 
-  el('filedropLabel').innerHTML = song.pdfName
-    ? `📄 Keeping: ${escapeHtml(song.pdfName)}<br><span style="font-size:11.5px;">Click to replace</span>`
-    : '📄 Click to choose a PDF<br><span style="font-size:11.5px;">Piano / guitar notes</span>';
-  el('filedrop').classList.toggle('has-file', !!song.pdfName);
-
-  el('formHeading').textContent = 'Edit song';
-  el('formSub').textContent = 'Updating an existing entry.';
-  el('saveBtn').textContent = 'Update song';
-  el('cancelEditBtn').style.display = 'inline-block';
-
-  el('adminPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+function openPdfModal(entry){
+  openModal(entry.title || 'Notes');
+  el('modalBody').innerHTML = `<iframe src="${entry.pdfData}"></iframe>`;
+  el('modalFoot').style.display = 'flex';
+  el('modalFoot').innerHTML = `<a class="btn btn-brass" href="${entry.pdfData}" download="${escapeHtml(entry.pdfName || 'notes.pdf')}">Download PDF</a>`;
+}
+function openTextModal(entry, cat){
+  openModal(entry.title || (cat === 'lyrics' ? 'Lyrics' : 'Notes'));
+  const body = el('modalBody');
+  body.className = 'modal-body text-mode';
+  body.textContent = cat === 'lyrics' ? (entry.lyricsText || '') : (entry.notesText || '');
+}
+function openYoutubeModal(entry){
+  const id = youtubeId(entry.youtube);
+  openModal(entry.title || 'YouTube');
+  el('modalBody').innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen style="height:60vh;"></iframe>`;
 }
 
-function resetForm(){
-  editingId = null;
-  editingExistingPdf = null;
-  pendingPdf = null;
-  el('fTitle').value=''; el('fArtist').value=''; el('fAlbum').value='';
-  el('fDirector').value=''; el('fYoutube').value=''; el('pdfInput').value='';
-  el('filedropLabel').innerHTML = '📄 Click to choose a PDF<br><span style="font-size:11.5px;">Piano / guitar notes</span>';
-  el('filedrop').classList.remove('has-file');
-  el('formHeading').textContent = 'Add a song';
-  el('formSub').textContent = isAdmin ? 'You can also edit or remove any song below.' : 'Visible to anyone signed in with Google.';
-  el('saveBtn').textContent = 'Save song';
-  el('cancelEditBtn').style.display = 'none';
-}
+/* ---------- Image / PDF pickers ---------- */
 
-el('cancelEditBtn')?.addEventListener('click', resetForm);
+document.querySelectorAll('#imageSeg button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#imageSeg button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  imageMode = b.dataset.mode;
+  el('fImageUrl').style.display = imageMode === 'url' ? 'block' : 'none';
+  el('imgFiledrop').style.display = imageMode === 'upload' ? 'block' : 'none';
+}));
 
-el('pdfInput')?.addEventListener('change', (e) => {
+document.querySelectorAll('#notesSeg button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#notesSeg button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  notesMode = b.dataset.mode;
+  el('pdfFiledrop').style.display = notesMode === 'pdf' ? 'block' : 'none';
+  el('fNotesText').style.display = notesMode === 'text' ? 'block' : 'none';
+}));
+
+el('imgInput').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.type !== 'application/pdf') {
-    el('saveMsg').textContent = 'Please choose a PDF file.';
-    el('saveMsg').className = 'save-msg err';
-    return;
-  }
-  if (file.size > 650 * 1024) {
-    el('saveMsg').textContent = 'PDF is too large (keep it under 650 KB — try compressing it).';
-    el('saveMsg').className = 'save-msg err';
-    return;
-  }
+  if (!file.type.startsWith('image/')) { el('saveMsg').textContent = 'Please choose an image file.'; el('saveMsg').className='save-msg err'; return; }
+  if (file.size > 200 * 1024) { el('saveMsg').textContent = 'Image too large (keep under 200 KB).'; el('saveMsg').className='save-msg err'; return; }
   const reader = new FileReader();
   reader.onload = () => {
-    pendingPdf = { name: file.name, dataUrl: reader.result };
-    el('filedropLabel').innerHTML = `✅ ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
-    el('filedrop').classList.add('has-file');
-  };
-  reader.onerror = () => {
-    el('saveMsg').textContent = 'Could not read that file, try again.';
-    el('saveMsg').className = 'save-msg err';
+    pendingImage = { dataUrl: reader.result, name: file.name };
+    el('imgFiledropLabel').innerHTML = `✅ ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
+    el('imgFiledrop').classList.add('has-file');
   };
   reader.readAsDataURL(file);
 });
 
-el('saveBtn')?.addEventListener('click', async () => {
-  if (!isSignedIn) { el('saveMsg').textContent = 'Please sign in first.'; el('saveMsg').className = 'save-msg err'; return; }
-  if (editingId && !isAdmin) { el('saveMsg').textContent = 'Only the admin can edit songs.'; el('saveMsg').className = 'save-msg err'; return; }
+el('pdfInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') { el('saveMsg').textContent = 'Please choose a PDF file.'; el('saveMsg').className='save-msg err'; return; }
+  if (file.size > 500 * 1024) { el('saveMsg').textContent = 'PDF too large (keep under 500 KB).'; el('saveMsg').className='save-msg err'; return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingPdf = { dataUrl: reader.result, name: file.name };
+    el('pdfFiledropLabel').innerHTML = `✅ ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
+    el('pdfFiledrop').classList.add('has-file');
+  };
+  reader.readAsDataURL(file);
+});
 
+/* ---------- Edit / Reset ---------- */
+
+function startEdit(entry, cat){
+  if (!isAdmin) return;
+  editingId = entry.id;
+  editingCategory = cat;
+  currentCategory = cat;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  el('listHeading').textContent = CATEGORY_LABELS[cat];
+  populateFilters(cat); renderList();
+
+  el('fTitle').value = entry.title || '';
+  el('fArtist').value = entry.artist || '';
+  el('fAlbum').value = entry.album || '';
+  el('fYoutube').value = entry.youtube || '';
+
+  existingImageUrl = entry.imageUrl || null;
+  pendingImage = null;
+  if (entry.imageUrl && !entry.imageUrl.startsWith('data:')) {
+    imageMode = 'url';
+    el('fImageUrl').value = entry.imageUrl;
+  } else {
+    imageMode = entry.imageUrl ? 'upload' : 'url';
+    el('fImageUrl').value = entry.imageUrl && !entry.imageUrl.startsWith('data:') ? entry.imageUrl : '';
+  }
+  document.querySelectorAll('#imageSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode === imageMode));
+  el('fImageUrl').style.display = imageMode === 'url' ? 'block' : 'none';
+  el('imgFiledrop').style.display = imageMode === 'upload' ? 'block' : 'none';
+  el('imgFiledropLabel').innerHTML = entry.imageUrl && entry.imageUrl.startsWith('data:')
+    ? '🖼️ Keeping current image<br><span style="font-size:11.5px;">Click to replace</span>'
+    : '🖼️ Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>';
+
+  if (cat === 'lyrics') {
+    el('fLyrics').value = entry.lyricsText || '';
+  } else {
+    existingPdf = entry.pdfData ? { pdfData: entry.pdfData, pdfName: entry.pdfName } : null;
+    pendingPdf = null;
+    notesMode = entry.contentType === 'text' ? 'text' : 'pdf';
+    document.querySelectorAll('#notesSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode === notesMode));
+    el('pdfFiledrop').style.display = notesMode === 'pdf' ? 'block' : 'none';
+    el('fNotesText').style.display = notesMode === 'text' ? 'block' : 'none';
+    el('fNotesText').value = entry.notesText || '';
+    el('pdfFiledropLabel').innerHTML = entry.pdfName
+      ? `📄 Keeping: ${escapeHtml(entry.pdfName)}<br><span style="font-size:11.5px;">Click to replace</span>`
+      : '📄 Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>';
+  }
+
+  renderFormForCategory(cat);
+  el('saveBtn').textContent = 'Update';
+  el('cancelEditBtn').style.display = 'inline-block';
+  el('adminPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function resetForm(){
+  editingId = null; editingCategory = null;
+  pendingImage = null; existingImageUrl = null;
+  pendingPdf = null; existingPdf = null;
+  imageMode = 'url'; notesMode = 'pdf';
+
+  el('fTitle').value=''; el('fArtist').value=''; el('fAlbum').value=''; el('fYoutube').value='';
+  el('fImageUrl').value=''; el('fLyrics').value=''; el('fNotesText').value='';
+  el('imgInput').value=''; el('pdfInput').value='';
+
+  document.querySelectorAll('#imageSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode==='url'));
+  el('fImageUrl').style.display = 'block';
+  el('imgFiledrop').style.display = 'none';
+  el('imgFiledrop').classList.remove('has-file');
+  el('imgFiledropLabel').innerHTML = '🖼️ Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>';
+
+  document.querySelectorAll('#notesSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode==='pdf'));
+  el('pdfFiledrop').style.display = 'block';
+  el('fNotesText').style.display = 'none';
+  el('pdfFiledrop').classList.remove('has-file');
+  el('pdfFiledropLabel').innerHTML = '📄 Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>';
+
+  el('saveBtn').textContent = 'Save';
+  el('cancelEditBtn').style.display = 'none';
+  if (isSignedIn) renderFormForCategory(currentCategory);
+}
+el('cancelEditBtn').addEventListener('click', resetForm);
+
+/* ---------- Save (create or update) ---------- */
+
+el('saveBtn').addEventListener('click', async () => {
+  if (!isSignedIn) { el('saveMsg').textContent = 'Please sign in first.'; el('saveMsg').className='save-msg err'; return; }
+  if (editingId && !isAdmin) { el('saveMsg').textContent = 'Only the admin can edit entries.'; el('saveMsg').className='save-msg err'; return; }
+
+  const cat = editingId ? editingCategory : currentCategory;
   const title = el('fTitle').value.trim();
   const artist = el('fArtist').value.trim();
   const album = el('fAlbum').value.trim();
-  const director = el('fDirector').value.trim();
   const youtube = el('fYoutube').value.trim();
 
-  if (!title) { el('saveMsg').textContent = 'Song title is required.'; el('saveMsg').className = 'save-msg err'; return; }
+  if (!title) { el('saveMsg').textContent = 'Title is required.'; el('saveMsg').className='save-msg err'; return; }
 
-  // Need a PDF from somewhere: a freshly chosen file, or (when editing) the
-  // one already attached to this song.
-  const pdfData = pendingPdf ? pendingPdf.dataUrl : (editingExistingPdf ? editingExistingPdf.pdfData : null);
-  const pdfName = pendingPdf ? pendingPdf.name : (editingExistingPdf ? editingExistingPdf.pdfName : null);
-  if (!pdfData) { el('saveMsg').textContent = 'Please upload the PDF notes first.'; el('saveMsg').className = 'save-msg err'; return; }
+  let imageUrl = null;
+  if (imageMode === 'url') {
+    imageUrl = el('fImageUrl').value.trim() || null;
+  } else {
+    imageUrl = pendingImage ? pendingImage.dataUrl : existingImageUrl;
+  }
+
+  const data = { title, artist, album, youtube, imageUrl };
+
+  if (cat === 'lyrics') {
+    const lyricsText = el('fLyrics').value.trim();
+    if (!lyricsText) { el('saveMsg').textContent = 'Lyrics text is required.'; el('saveMsg').className='save-msg err'; return; }
+    data.lyricsText = lyricsText;
+  } else {
+    if (notesMode === 'pdf') {
+      const pdfData = pendingPdf ? pendingPdf.dataUrl : (existingPdf ? existingPdf.pdfData : null);
+      const pdfName = pendingPdf ? pendingPdf.name : (existingPdf ? existingPdf.pdfName : null);
+      if (!pdfData) { el('saveMsg').textContent = 'Please upload a PDF, or switch to "Type as text".'; el('saveMsg').className='save-msg err'; return; }
+      data.contentType = 'pdf'; data.pdfData = pdfData; data.pdfName = pdfName;
+      data.notesText = null;
+    } else {
+      const notesText = el('fNotesText').value.trim();
+      if (!notesText) { el('saveMsg').textContent = 'Please type the notes, or switch to "Upload PDF".'; el('saveMsg').className='save-msg err'; return; }
+      data.contentType = 'text'; data.notesText = notesText;
+      data.pdfData = null; data.pdfName = null;
+    }
+  }
 
   el('saveBtn').disabled = true;
   el('saveMsg').textContent = editingId ? 'Updating…' : 'Saving…';
@@ -478,16 +764,12 @@ el('saveBtn')?.addEventListener('click', async () => {
 
   try {
     if (editingId) {
-      await db.collection('songs').doc(editingId).update({
-        title, artist, album, director, youtube, pdfData, pdfName
-      });
+      await db.collection(COLLECTIONS[cat]).doc(editingId).update(data);
       el('saveMsg').textContent = 'Updated!';
     } else {
-      await db.collection('songs').add({
-        title, artist, album, director, youtube, pdfData, pdfName,
-        createdBy: (pendingGoogleProfile && pendingGoogleProfile.email) || null,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      data.createdBy = (pendingGoogleProfile && pendingGoogleProfile.email) || null;
+      await db.collection(COLLECTIONS[cat]).add(data);
       el('saveMsg').textContent = 'Saved!';
     }
     resetForm();
@@ -496,7 +778,7 @@ el('saveBtn')?.addEventListener('click', async () => {
     el('saveMsg').className = 'save-msg err';
   } finally {
     el('saveBtn').disabled = false;
-    setTimeout(()=>{ el('saveMsg').textContent=''; }, 3000);
+    setTimeout(() => { el('saveMsg').textContent=''; }, 3000);
   }
 });
 
