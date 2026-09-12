@@ -232,12 +232,17 @@ function renderAuthArea(user){
 
 function signIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(e => {
-    alert('Sign-in failed: ' + e.message);
-  });
+  provider.setCustomParameters({ prompt: 'select_account' });
+  auth.signInWithRedirect(provider);
 }
 
 if (isConfigured) {
+  auth.getRedirectResult().catch(e => {
+    if (e && e.code && e.code !== 'auth/no-auth-event') {
+      alert('Sign-in failed: ' + e.message);
+    }
+  });
+
   auth.onAuthStateChanged(user => {
     if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
       isAdmin = true;
