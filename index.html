@@ -16,6 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" onload="window.__gisLoaded && window.__gisLoaded()"></script>
 
 <style>
   :root{
@@ -116,7 +117,7 @@
       </div>
     </div>
     <div id="authArea">
-      <button class="btn btn-brass" id="signInBtn">Sign in with Google</button>
+      <div id="gisBtn"></div>
     </div>
   </div>
 
@@ -179,6 +180,14 @@ const firebaseConfig = {
 /* The ONLY Google account allowed to add/edit/delete songs */
 const ADMIN_EMAIL = "gosmaostan310@gmail.com";
 
+/* Web client ID for "Sign in with Google" — get this from
+   Firebase Console > Authentication > Sign-in method > Google >
+   expand "Web SDK configuration" > copy "Web client ID". Then in
+   Google Cloud Console > APIs & Services > Credentials, open that
+   same OAuth client and add your site's exact origin (e.g.
+   https://gosmaostan.github.io) under "Authorized JavaScript origins". */
+const GOOGLE_CLIENT_ID = "PASTE_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com";
+
 /* ================================================================ */
 
 const isConfigured = !firebaseConfig.apiKey.startsWith("PASTE_");
@@ -222,27 +231,45 @@ function renderAuthArea(user){
     el('adminPanel').style.display = 'block';
     el('publicNote').style.display = 'none';
   } else {
-    area.innerHTML = '<button class="btn btn-brass" id="signInBtn">Sign in with Google</button>';
-    el('signInBtn').addEventListener('click', signIn);
+    area.innerHTML = '<div id="gisBtn"></div>';
+    renderGisButton();
     el('topbarSub').textContent = 'Browse sheet music — anyone can view';
     el('adminPanel').style.display = 'none';
     el('publicNote').style.display = 'block';
   }
 }
 
-function signIn(){
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  auth.signInWithRedirect(provider);
+function handleCredentialResponse(response){
+  const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+  auth.signInWithCredential(credential).catch(e => {
+    alert('Sign-in failed: ' + e.message);
+  });
+}
+
+let gisReady = false;
+window.__gisLoaded = function(){
+  gisReady = true;
+  if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredentialResponse
+    });
+    renderGisButton();
+  }
+};
+
+function renderGisButton(){
+  const box = document.getElementById('gisBtn');
+  if (!box) return;
+  if (!gisReady || GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
+    box.innerHTML = '<button class="btn btn-ghost" disabled>Sign-in not configured</button>';
+    return;
+  }
+  box.innerHTML = '';
+  google.accounts.id.renderButton(box, { theme: 'filled_black', size: 'medium', text: 'signin_with', shape: 'pill' });
 }
 
 if (isConfigured) {
-  auth.getRedirectResult().catch(e => {
-    if (e && e.code && e.code !== 'auth/no-auth-event') {
-      alert('Sign-in failed: ' + e.message);
-    }
-  });
-
   auth.onAuthStateChanged(user => {
     if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
       isAdmin = true;
@@ -376,9 +403,7 @@ el('saveBtn')?.addEventListener('click', async () => {
 });
 
 if (!isConfigured) {
-  el('signInBtn')?.addEventListener('click', () => {
-    alert('Add your Firebase config first — see the banner above.');
-  });
+  el('gisBtn').innerHTML = '<button class="btn btn-ghost" disabled>Add Firebase config first</button>';
 }
 </script>
 
