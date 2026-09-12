@@ -9,11 +9,13 @@
 
 <!-- ============================================================
      FIREBASE SDK (compat build — simplest for a single HTML file)
+     Note: PDFs are stored directly inside Firestore documents (as
+     base64 text) instead of Firebase Storage, so this app works on
+     Firebase's free Spark plan with no billing account required.
      ============================================================ -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
 
 <style>
   :root{
@@ -185,12 +187,11 @@ if (isConfigured) {
   document.getElementById('mainGrid').style.display = 'grid';
 }
 
-let app, auth, db, storage;
+let app, auth, db;
 if (isConfigured) {
   app = firebase.initializeApp(firebaseConfig);
   auth = firebase.auth();
   db = firebase.firestore();
-  storage = firebase.storage();
 }
 
 const el = id => document.getElementById(id);
@@ -281,9 +282,9 @@ function renderSongs(songs){
           </div>
         </div>
         <div class="song-actions">
-          ${s.pdfUrl ? `<a class="link-btn link-pdf" href="${s.pdfUrl}" target="_blank" rel="noopener">View PDF</a>` : `<span class="link-btn link-disabled">No PDF</span>`}
+          ${s.pdfData ? `<a class="link-btn link-pdf" href="${s.pdfData}" download="${escapeHtml(s.pdfName||'notes.pdf')}">View PDF</a>` : `<span class="link-btn link-disabled">No PDF</span>`}
           ${s.youtube ? `<a class="link-btn link-yt" href="${escapeHtml(s.youtube)}" target="_blank" rel="noopener">YouTube</a>` : `<span class="link-btn link-disabled">No link</span>`}
-          ${isAdmin ? `<button class="btn-danger" data-id="${s.id}" data-path="${s.pdfPath||''}">Delete</button>` : ''}
+          ${isAdmin ? `<button class="btn-danger" data-id="${s.id}">Delete</button>` : ''}
         </div>
       </div>
     </div>
@@ -292,10 +293,9 @@ function renderSongs(songs){
   if (isAdmin) {
     list.querySelectorAll('.btn-danger').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const id = btn.dataset.id, path = btn.dataset.path;
+        const id = btn.dataset.id;
         try {
           await db.collection('songs').doc(id).delete();
-          if (path) { await storage.ref(path).delete().catch(()=>{}); }
         } catch(e) {
           alert('Delete failed: ' + e.message);
         }
@@ -312,14 +312,24 @@ el('pdfInput')?.addEventListener('change', (e) => {
     el('saveMsg').className = 'save-msg err';
     return;
   }
-  if (file.size > 10 * 1024 * 1024) {
-    el('saveMsg').textContent = 'PDF is too large (keep it under 10 MB).';
+  // Firestore documents must stay under 1MB, and base64 text is ~33% bigger
+  // than the original file, so keep the original PDF under ~650KB.
+  if (file.size > 650 * 1024) {
+    el('saveMsg').textContent = 'PDF is too large (keep it under 650 KB — try compressing it).';
     el('saveMsg').className = 'save-msg err';
     return;
   }
-  pendingPdf = file;
-  el('filedropLabel').innerHTML = `✅ ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
-  el('filedrop').classList.add('has-file');
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingPdf = { name: file.name, dataUrl: reader.result };
+    el('filedropLabel').innerHTML = `✅ ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
+    el('filedrop').classList.add('has-file');
+  };
+  reader.onerror = () => {
+    el('saveMsg').textContent = 'Could not read that file, try again.';
+    el('saveMsg').className = 'save-msg err';
+  };
+  reader.readAsDataURL(file);
 });
 
 el('saveBtn')?.addEventListener('click', async () => {
@@ -333,19 +343,13 @@ el('saveBtn')?.addEventListener('click', async () => {
   if (!pendingPdf) { el('saveMsg').textContent = 'Please upload the PDF notes first.'; el('saveMsg').className = 'save-msg err'; return; }
 
   el('saveBtn').disabled = true;
-  el('saveMsg').textContent = 'Uploading…';
+  el('saveMsg').textContent = 'Saving…';
   el('saveMsg').className = 'save-msg';
 
   try {
-    const path = 'pdfs/' + Date.now() + '_' + pendingPdf.name;
-    const ref = storage.ref(path);
-    await ref.put(pendingPdf);
-    const url = await ref.getDownloadURL();
-
     await db.collection('songs').add({
       title, artist, album, director, youtube,
-      pdfUrl: url,
-      pdfPath: path,
+      pdfData: pendingPdf.dataUrl,
       pdfName: pendingPdf.name,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
