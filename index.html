@@ -245,8 +245,9 @@ if (isConfigured) {
     } else if (user) {
       // Signed in with a non-admin Google account — not allowed to manage songs.
       isAdmin = false;
+      const attemptedEmail = user.email;
       auth.signOut();
-      alert("That Google account isn't authorized to manage songs. You can still browse as a visitor.");
+      alert("That Google account isn't authorized to manage songs.\n\nSigned in as: " + attemptedEmail + "\nExpected admin: " + ADMIN_EMAIL + "\n\nYou can still browse as a visitor.");
     } else {
       isAdmin = false;
       renderAuthArea(null);
