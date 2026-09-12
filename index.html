@@ -10,7 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-<script src="https://accounts.google.com/gsi/client" onload="window.__gisLoaded && window.__gisLoaded()"></script>
+<script src="https://accounts.google.com/gsi/client" onload="window.__gisScriptLoaded = true; window.__gisLoaded && window.__gisLoaded();"></script>
 
 <style>
   :root{
@@ -228,16 +228,44 @@ function handleCredentialResponse(response){
 }
 
 let gisReady = false;
-window.__gisLoaded = function(){
+
+function initGis(){
+  if (gisReady) return;
+  if (!(window.google && window.google.accounts)) return;
   gisReady = true;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse
+  });
+  renderGisButton();
+}
+
+// Callback fired by the GSI <script onload="...">
+window.__gisLoaded = function(){
   if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse
-    });
-    renderGisButton();
+    initGis();
   }
 };
+
+// FIX: if the GSI script already finished loading (and fired onload)
+// before this block ran, __gisLoaded above never got called. Catch that
+// race here by checking the flag / the global directly, right now.
+if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
+  if (window.__gisScriptLoaded || (window.google && window.google.accounts)) {
+    initGis();
+  }
+}
+
+// Extra safety net: poll briefly in case neither of the above caught it
+// (e.g. slow network ordering). Stops as soon as it succeeds or after 5s.
+if (isConfigured && !GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
+  let tries = 0;
+  const poll = setInterval(() => {
+    tries++;
+    if (gisReady || tries > 25) { clearInterval(poll); return; }
+    initGis();
+  }, 200);
+}
 
 function renderGisButton(){
   const box = document.getElementById('gisBtn');
