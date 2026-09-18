@@ -486,7 +486,6 @@ let app, auth, db;
 if (isConfigured) {
   app = firebase.initializeApp(firebaseConfig);
   auth = firebase.auth();
-  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   db = firebase.firestore();
 }
 
@@ -644,7 +643,7 @@ if (isConfigured) {
     if (user) {
       isSignedIn = true;
       const profileEmail = user.email || (pendingGoogleProfile && pendingGoogleProfile.email) || '';
-      isAdmin = !!profileEmail && profileEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      isAdmin = isCurrentUserAdmin();
       renderAuthArea(user, profileEmail);
       renderList();
     } else {
@@ -1117,7 +1116,7 @@ function startAdd(cat){
 
 // "Edit Metadata" — full page with song details, credits, release date, image and YouTube
 function startEditMetadata(entry, cat){
-  if (!isSignedIn) return;
+  if (!isAdmin) return;
   resetForm();
   editorMode = 'meta';
   currentCategory = cat;
@@ -1141,7 +1140,7 @@ function startEditMetadata(entry, cat){
 
 // "Edit Lyrics" / "Edit Notes" — full page with only the content, plus formatting tips and Save & Exit
 function startEditLyrics(entry, cat){
-  if (!isSignedIn) return;
+  if (!isAdmin) return;
   resetForm();
   editorMode = 'lyrics';
   currentCategory = cat;
@@ -1231,16 +1230,23 @@ el('cancelEditBtn').addEventListener('click', () => { resetForm(); closeEditor()
 
 /* ---------- Save (create or update) — full-page editor ---------- */
 
+function isCurrentUserAdmin(){
+  const user = auth && auth.currentUser;
+  return !!(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+}
+
 function showSaveMsg(text, isErr){
   el('saveMsg').textContent = text;
   el('saveMsg').className = 'save-msg' + (isErr ? ' err' : '');
 }
 
 async function performSave(exitAfter){
-  if (!isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
-  if ((editorMode === 'meta' || editorMode === 'lyrics') && !isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
-  if (!auth.currentUser) {
-    showSaveMsg('Your sign-in session has expired. Click "Sign in with Google" at the top, then press Save again — your text won\'t be lost.', true);
+  const user = auth && auth.currentUser;
+  if (!user) { showSaveMsg('Please sign in first.', true); return; }
+
+  // Existing songs may only be changed by the admin account.
+  if (editingId && !isCurrentUserAdmin()) {
+    showSaveMsg('Admin permission required to edit this song.', true);
     return;
   }
 
@@ -1293,13 +1299,17 @@ async function performSave(exitAfter){
   showSaveMsg(editingId ? 'Updating…' : 'Saving…', false);
 
   try {
-    if (auth.currentUser) { await auth.currentUser.getIdToken(true); }
     if (editingId) {
-      await db.collection(COLLECTIONS[cat]).doc(editingId).update(data);
+      data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      data.updatedBy = user.email || null;
+      data.updatedByUid = user.uid || null;
+      // Merge keeps older songs compatible with the newer metadata fields.
+      await db.collection(COLLECTIONS[cat]).doc(editingId).set(data, { merge: true });
       showSaveMsg('Updated!', false);
     } else {
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      data.createdBy = (pendingGoogleProfile && pendingGoogleProfile.email) || null;
+      data.createdBy = user.email || null;
+      data.createdByUid = user.uid || null;
       await db.collection(COLLECTIONS[cat]).add(data);
       showSaveMsg('Saved!', false);
     }
@@ -1308,8 +1318,11 @@ async function performSave(exitAfter){
       closeEditor();
     }
   } catch(e) {
-    const debugEmail = (auth.currentUser && auth.currentUser.email) || 'none';
-    showSaveMsg('Save failed: ' + e.message + ' [signed in as: ' + debugEmail + ']', true);
+    if (e && e.code === 'permission-denied') {
+      showSaveMsg('Save failed: Firebase Firestore Rules are blocking this edit. Publish the supplied Firestore rules and sign in again.', true);
+    } else {
+      showSaveMsg('Save failed: ' + (e && e.message ? e.message : e), true);
+    }
   } finally {
     el('saveBtn').disabled = false;
     el('saveExitBtn').disabled = false;
@@ -1456,11 +1469,6 @@ el('qeOverlay').addEventListener('click', e => { if (e.target === el('qeOverlay'
 
 el('qeSave').addEventListener('click', async () => {
   if (!qeEntry || !qeCat || !qeField) return;
-  if (!auth.currentUser) {
-    el('qeMsg').style.color = 'var(--red)';
-    el('qeMsg').textContent = 'Your sign-in session has expired. Sign in with Google again (top of the page), then press Save again.';
-    return;
-  }
   const data = {};
 
   if (qeField === 'title') {
@@ -1492,15 +1500,11 @@ el('qeSave').addEventListener('click', async () => {
   el('qeMsg').style.color = 'var(--grey)';
   el('qeMsg').textContent = 'Saving…';
   try {
-    // Force a fresh ID token before writing, in case the cached token
-    // is stale and doesn't carry the email claim Firestore rules check.
-    if (auth.currentUser) { await auth.currentUser.getIdToken(true); }
     await db.collection(COLLECTIONS[qeCat]).doc(qeEntry.id).update(data);
     closeQuickEdit();
   } catch(e) {
     el('qeMsg').style.color = 'var(--red)';
-    const debugEmail = (auth.currentUser && auth.currentUser.email) || 'none';
-    el('qeMsg').textContent = 'Save failed: ' + e.message + ' [signed in as: ' + debugEmail + ']';
+    el('qeMsg').textContent = 'Save failed: ' + e.message;
   } finally {
     el('qeSave').disabled = false;
   }
