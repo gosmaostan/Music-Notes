@@ -1293,7 +1293,6 @@ async function performSave(exitAfter){
   showSaveMsg(editingId ? 'Updating…' : 'Saving…', false);
 
   try {
-    if (auth.currentUser) { await auth.currentUser.getIdToken(true); }
     if (editingId) {
       await db.collection(COLLECTIONS[cat]).doc(editingId).update(data);
       showSaveMsg('Updated!', false);
@@ -1492,9 +1491,6 @@ el('qeSave').addEventListener('click', async () => {
   el('qeMsg').style.color = 'var(--grey)';
   el('qeMsg').textContent = 'Saving…';
   try {
-    // Force a fresh ID token before writing, in case the cached token
-    // is stale and doesn't carry the email claim Firestore rules check.
-    if (auth.currentUser) { await auth.currentUser.getIdToken(true); }
     await db.collection(COLLECTIONS[qeCat]).doc(qeEntry.id).update(data);
     closeQuickEdit();
   } catch(e) {
