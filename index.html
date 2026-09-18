@@ -64,33 +64,27 @@
     line-height:0.95; letter-spacing:0.01em; }
   .hero-desc{ margin:12px 0 0; max-width:520px; font-size:14.5px; line-height:1.6; color:rgba(247,245,238,0.65); }
   .hero-count{ flex-shrink:0; font-size:13px; color:rgba(247,245,238,0.55); padding-bottom:6px; white-space:nowrap; }
-  .topbar-tabs{ background:var(--yellow); display:flex; gap:28px; padding:0 clamp(18px,4vw,48px);
-    overflow-x:auto; border-top:1px solid rgba(11,11,12,0.12); }
-  .tab-btn{ background:transparent; border:none; color:rgba(11,11,12,0.55); font-size:14px;
-    font-weight:600; font-family:'Inter',sans-serif; padding:14px 0; border-bottom:2px solid transparent;
-    white-space:nowrap; }
-  .tab-btn.active{ color:var(--black); border-bottom-color:var(--black); }
+  .tabs{ margin-top:26px; display:flex; gap:28px; border-top:1px solid var(--line-dark); }
+  .tab-btn{ background:transparent; border:none; color:rgba(247,245,238,0.55); font-size:14px;
+    font-weight:600; font-family:'Inter',sans-serif; padding:16px 0; border-top:2px solid transparent;
+    margin-top:-1px; }
+  .tab-btn.active{ color:var(--yellow); border-top-color:var(--yellow); }
 
   .wrap{ max-width:1180px; margin:0 auto; padding:34px clamp(16px,4vw,40px) 80px; }
   .banner{ background:rgba(245,244,0,0.1); border:1px solid rgba(245,244,0,0.35);
     padding:14px 18px; font-size:13.5px; color:#7a7900; margin-bottom:24px; }
   .banner code{ background:rgba(0,0,0,0.06); padding:1px 5px; }
 
-  /* ---------- Add/Edit form: full page, opens like the list/detail views ---------- */
-  .editor-head{ padding:30px 28px 6px; }
-  .editor-head h2{ font-size:22px; font-weight:700; margin-bottom:4px; }
-  .editor-head .sub{ font-size:13px; color:var(--grey); }
-  .editor-body-wrap{ display:flex; align-items:flex-start; gap:28px; padding:22px 28px 30px; }
-  .editor-main{ flex:1; min-width:0; }
-  .editor-tips{ width:270px; flex-shrink:0; background:var(--cream); border:1px solid var(--line);
-    padding:18px 18px 20px; font-size:13px; color:var(--grey); }
-  .editor-tips h3{ font-size:13.5px; font-weight:700; color:var(--ink); margin-bottom:10px; }
-  .editor-tips ul{ margin:0; padding-left:18px; line-height:1.75; }
-  .editor-tips li{ margin-bottom:2px; }
-  @media (max-width:820px){
-    .editor-body-wrap{ flex-direction:column; }
-    .editor-tips{ width:100%; }
-  }
+  .grid{ display:grid; grid-template-columns:360px 1fr; gap:32px; align-items:start; }
+  @media (max-width:860px){ .grid{ grid-template-columns:1fr; } }
+
+  /* ---------- Edit / Add modal ---------- */
+  .edit-modal-overlay{ position:fixed; inset:0; background:rgba(11,11,12,0.75); display:none;
+    align-items:flex-start; justify-content:center; z-index:200; padding:40px 20px; overflow-y:auto; }
+  .edit-modal-overlay.open{ display:flex; }
+  .edit-modal-box{ background:var(--white); width:100%; max-width:560px; }
+  .edit-modal-head{ display:flex; justify-content:flex-end; padding:8px 10px; background:var(--black); }
+  .edit-modal-close{ background:none; border:none; color:var(--yellow); font-size:26px; line-height:1; padding:2px 8px; }
 
   /* ---------- Admin panel ---------- */
   .panel{ background:var(--white); border:1px solid var(--line); }
@@ -102,7 +96,6 @@
   .field2 input, .field2 textarea, .field2 select{ width:100%; padding:10px 12px;
     border:1px solid var(--line); font-size:14px; background:var(--cream); font-family:'Inter',sans-serif; }
   .field2 textarea{ resize:vertical; min-height:110px; line-height:1.5; }
-  #fLyrics, #fNotesText{ min-height:420px; line-height:1.8; }
   .field2 input:focus, .field2 textarea:focus{ outline:2px solid var(--black); outline-offset:1px; }
   .filedrop{ border:1.5px dashed var(--line); padding:16px 14px; text-align:center; font-size:13px;
     color:var(--grey); margin-bottom:14px; background:var(--cream); }
@@ -130,11 +123,11 @@
   .track-row{ display:grid; grid-template-columns:34px 52px 1fr auto auto; align-items:center;
     gap:16px; padding:16px 6px; border-bottom:1px solid var(--line); }
   .track-row:hover{ background:rgba(11,11,12,0.03); }
+  .track-row-editable{ cursor:pointer; }
   .track-index{ font-family:'Anton',sans-serif; font-size:16px; color:#C9C2AC; }
   .track-thumb{ width:52px; height:52px; object-fit:cover; background:#E7E1CE; flex-shrink:0; }
   .track-thumb-empty{ display:flex; align-items:center; justify-content:center; color:#B4AC93; font-size:18px; }
-  .track-title{ font-size:16px; font-weight:700; margin-bottom:3px; cursor:pointer; }
-  .track-title:hover{ text-decoration:underline; }
+  .track-title{ font-size:16px; font-weight:700; margin-bottom:3px; }
   .track-meta{ font-size:13px; color:var(--grey); }
   .track-album{ font-size:12.5px; color:#9a917c; }
   .track-date{ font-size:12px; color:#a39a86; white-space:nowrap; }
@@ -160,50 +153,35 @@
   .edit-opt-btn:hover{ background:var(--black); color:var(--yellow); }
   .edit-opt-btn.danger{ border-color:var(--red); color:var(--red); }
   .edit-opt-btn.danger:hover{ background:var(--red); color:var(--white); }
+  #quickAddBtn{ background:var(--yellow); border-color:var(--black); }
+  #quickAddBtn:hover{ background:var(--black); color:var(--yellow); }
 
   /* ---------- Detail (in-page lyrics / notes / video view) ---------- */
   .back-link{ background:none; border:none; padding:0; margin-bottom:20px; color:var(--ink);
     font-weight:700; font-size:14px; text-decoration:underline; }
-  .detail-card{ background:var(--white); border:1px solid var(--line); overflow:hidden; }
-  .detail-banner{ position:relative; background:var(--black); color:var(--cream);
-    padding:32px 28px; overflow:hidden; }
-  .detail-banner-inner{ position:relative; display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap; }
-  .detail-cover{ width:132px; height:132px; object-fit:cover; flex-shrink:0;
-    border:1px solid rgba(247,245,238,0.15); background:#1c1c1c; }
-  .detail-cover-placeholder{ display:flex; align-items:center; justify-content:center;
-    color:rgba(247,245,238,0.35); font-size:38px; }
-  .detail-banner-text{ flex:1; min-width:180px; }
-  .detail-eyebrow{ font-size:12px; font-weight:700; letter-spacing:0.02em; color:var(--yellow); margin-bottom:6px; }
-  #detailTitle{ font-family:'Anton',sans-serif; font-weight:400; font-size:clamp(24px,4vw,38px); line-height:1.02; }
-  .detail-meta{ font-size:14px; color:rgba(247,245,238,0.65); line-height:1.7; margin-top:8px; }
+  .detail-card{ background:var(--white); border:1px solid var(--line); padding:28px; }
+  .detail-head{ display:flex; gap:18px; align-items:flex-start; margin-bottom:22px;
+    padding-bottom:22px; border-bottom:1px solid var(--line); }
+  .detail-thumb{ width:88px; height:88px; object-fit:cover; flex-shrink:0; background:#E7E1CE; }
+  #detailTitle{ font-size:26px; font-weight:800; }
+  .detail-meta{ font-size:14px; color:var(--grey); line-height:1.7; margin-top:6px; }
   .detail-actions{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
-  .detail-body-wrap{ padding:28px; }
   .detail-body.text-mode{ white-space:pre-wrap; font-size:15px; line-height:1.9; color:var(--ink); }
   .detail-body iframe{ width:100%; height:75vh; border:none; display:block; background:#2b2b2b; }
   .detail-body iframe.detail-video{ height:0; padding-bottom:56.25%; position:relative; }
   .detail-video-wrap{ position:relative; width:100%; padding-bottom:56.25%; height:0; background:#000; }
   .detail-video-wrap iframe{ position:absolute; inset:0; width:100%; height:100%; }
   .detail-download{ margin-top:16px; }
-
-  /* ---------- Right-click quick-edit context menu ---------- */
-  .ctx-menu{ position:fixed; z-index:1000; background:var(--white); border:1px solid var(--line);
-    box-shadow:0 8px 28px rgba(0,0,0,0.18); min-width:190px; padding:6px; display:none; }
-  .ctx-menu button{ display:block; width:100%; text-align:left; background:none; border:none;
-    padding:9px 12px; font-size:13.5px; color:var(--ink); }
-  .ctx-menu button:hover{ background:var(--cream); }
-  .ctx-menu button.danger{ color:var(--red); }
-  .ctx-menu hr{ border:none; border-top:1px solid var(--line); margin:5px 2px; }
-
-  /* ---------- Quick-edit modal ---------- */
-  .qe-overlay{ position:fixed; inset:0; background:rgba(11,11,12,0.55); display:none;
-    align-items:center; justify-content:center; z-index:1001; padding:20px; }
-  .qe-modal{ background:var(--white); max-width:480px; width:100%; padding:24px; max-height:88vh; overflow:auto; }
-  .qe-modal h3{ font-size:17px; margin-bottom:14px; }
-  .qe-modal textarea, .qe-modal input{ width:100%; padding:10px 12px; border:1px solid var(--line);
-    font-size:14px; background:var(--cream); font-family:'Inter',sans-serif; margin-bottom:10px; }
-  .qe-modal textarea{ min-height:200px; resize:vertical; line-height:1.5; }
-  .qe-actions{ display:flex; gap:10px; margin-top:6px; }
-  .qe-msg{ font-size:12.5px; margin-top:8px; min-height:16px; }
+  .detail-edit-row{ display:none; gap:10px; margin-bottom:16px; }
+  .detail-edit-btn{ border:1px solid var(--black); background:var(--white); color:var(--ink);
+    padding:8px 16px; font-size:13px; font-weight:700; }
+  .detail-edit-btn:hover{ background:var(--black); color:var(--yellow); }
+  .song-info{ margin-top:24px; padding-top:20px; border-top:1px solid var(--line); }
+  .song-info h3{ font-size:13px; font-weight:700; color:var(--grey); margin-bottom:12px; }
+  .song-info-row{ display:flex; gap:8px; font-size:14px; padding:7px 0; border-bottom:1px solid var(--line); }
+  .song-info-row:last-child{ border-bottom:none; }
+  .song-info-label{ width:110px; flex-shrink:0; color:var(--grey); font-weight:600; }
+  .song-info-value{ color:var(--ink); }
 </style>
 </head>
 <body>
@@ -224,12 +202,6 @@
     </div>
   </div>
 
-  <div class="topbar-tabs" id="categoryTabs">
-    <button class="tab-btn active" data-cat="lyrics">Song Lyrics</button>
-    <button class="tab-btn" data-cat="piano">Piano Notes</button>
-    <button class="tab-btn" data-cat="guitar">Guitar Notes</button>
-  </div>
-
   <div class="hero">
     <div class="hero-bg"></div>
     <div class="hero-inner">
@@ -242,6 +214,11 @@
           <p class="hero-desc" id="heroDesc">Full lyrics for every song in the collection, ready to sing along.</p>
         </div>
         <div class="hero-count" id="heroCount">0 entries</div>
+      </div>
+      <div class="tabs" id="categoryTabs">
+        <button class="tab-btn active" data-cat="lyrics">Song Lyrics</button>
+        <button class="tab-btn" data-cat="piano">Piano Notes</button>
+        <button class="tab-btn" data-cat="guitar">Guitar Notes</button>
       </div>
     </div>
   </div>
@@ -272,122 +249,95 @@
       </div>
     </div>
 
-    <div id="detailView" style="display:none;">
-      <button type="button" class="back-link" id="detailBack">&larr; Back to list</button>
-      <div class="detail-card">
-        <div class="detail-banner">
-          <div class="hero-bg"></div>
-          <div class="detail-banner-inner">
-            <img id="detailThumb" class="detail-cover" style="display:none;" alt="">
-            <div id="detailThumbPlaceholder" class="detail-cover detail-cover-placeholder">&#9835;</div>
-            <div class="detail-banner-text">
-              <div class="detail-eyebrow" id="detailEyebrow">Song Lyrics</div>
-              <h2 id="detailTitle"></h2>
-              <div class="detail-meta" id="detailMeta"></div>
+    <div class="edit-modal-overlay" id="editModalOverlay">
+      <div class="edit-modal-box">
+        <div class="edit-modal-head">
+          <button type="button" class="edit-modal-close" id="editModalClose">&times;</button>
+        </div>
+        <div class="panel-body">
+          <h2 id="formHeading">Add lyrics</h2>
+          <div class="sub" id="formSub">Visible to anyone signed in with Google.</div>
+
+          <div class="field2"><label>Title</label><input type="text" id="fTitle" placeholder="e.g. Kannaalane"></div>
+          <div class="field2"><label>Artist</label><input type="text" id="fArtist" placeholder="e.g. Hariharan"></div>
+          <div class="field2"><label>Album</label><input type="text" id="fAlbum" placeholder="e.g. Bombay"></div>
+
+          <div class="field2">
+            <label>Image</label>
+            <div class="seg" id="imageSeg">
+              <button type="button" class="active" data-mode="url">Image URL</button>
+              <button type="button" data-mode="upload">Upload from device</button>
+            </div>
+            <input type="url" id="fImageUrl" placeholder="https://...jpg">
+            <div class="filedrop" id="imgFiledrop" style="display:none;margin-top:8px;">
+              <label class="filedrop-label" for="imgInput" id="imgFiledropLabel">
+                Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>
+              </label>
+              <input type="file" id="imgInput" accept="image/*">
             </div>
           </div>
-        </div>
-        <div class="detail-body-wrap">
-          <div class="detail-body" id="detailBody"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Add / Edit Lyrics / Edit Metadata — opens as its own full page, hidden the rest of the time -->
-  <div id="editorView" style="display:none;">
-    <button type="button" class="back-link" id="editorBack">&larr; Back to list</button>
-    <div class="detail-card">
-      <div class="editor-head">
-        <h2 id="editorHeading">Add lyrics</h2>
-        <div class="sub" id="editorSub">Visible to anyone signed in with Google.</div>
-      </div>
-      <div class="editor-body-wrap">
-        <div class="editor-main">
+          <!-- Lyrics-only field -->
+          <div class="field2" id="lyricsField">
+            <label>Lyrics text</label>
+            <textarea id="fLyrics" placeholder="Paste the full lyrics here..."></textarea>
+          </div>
 
-          <!-- Title / Artist / Album / Image / YouTube — shown for "Add" and "Edit Metadata" -->
-          <div id="metaSection">
-            <div class="field2"><label>Title</label><input type="text" id="fTitle" placeholder="e.g. Kannaalane"></div>
-            <div class="field2"><label>Artist</label><input type="text" id="fArtist" placeholder="e.g. Hariharan"></div>
-            <div class="field2"><label>Album</label><input type="text" id="fAlbum" placeholder="e.g. Bombay"></div>
-
+          <!-- Piano/Guitar-only fields -->
+          <div id="notesFields" style="display:none;">
             <div class="field2">
-              <label>Image</label>
-              <div class="seg" id="imageSeg">
-                <button type="button" class="active" data-mode="url">Image URL</button>
-                <button type="button" data-mode="upload">Upload from device</button>
+              <label>Notes content</label>
+              <div class="seg" id="notesSeg">
+                <button type="button" class="active" data-mode="pdf">Upload PDF</button>
+                <button type="button" data-mode="text">Type as text</button>
               </div>
-              <input type="url" id="fImageUrl" placeholder="https://...jpg">
-              <div class="filedrop" id="imgFiledrop" style="display:none;margin-top:8px;">
-                <label class="filedrop-label" for="imgInput" id="imgFiledropLabel">
-                  Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>
+              <div class="filedrop" id="pdfFiledrop">
+                <label class="filedrop-label" for="pdfInput" id="pdfFiledropLabel">
+                  Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>
                 </label>
-                <input type="file" id="imgInput" accept="image/*">
+                <input type="file" id="pdfInput" accept="application/pdf">
               </div>
+              <textarea id="fNotesText" style="display:none;" placeholder="Type chords / notation here..."></textarea>
             </div>
-
-            <div class="field2"><label>YouTube link</label><input type="url" id="fYoutube" placeholder="https://youtube.com/watch?v=..."></div>
           </div>
 
-          <!-- Lyrics / Notes content — shown for "Add" and "Edit Lyrics"/"Edit Notes" -->
-          <div id="contentSection">
-            <div class="field2" id="lyricsField">
-              <label>Lyrics text</label>
-              <textarea id="fLyrics" placeholder="Paste the full lyrics here..."></textarea>
-            </div>
+          <div class="field2"><label>YouTube link</label><input type="url" id="fYoutube" placeholder="https://youtube.com/watch?v=..."></div>
 
-            <div id="notesFields" style="display:none;">
-              <div class="field2">
-                <label>Notes content</label>
-                <div class="seg" id="notesSeg">
-                  <button type="button" class="active" data-mode="pdf">Upload PDF</button>
-                  <button type="button" data-mode="text">Type as text</button>
-                </div>
-                <div class="filedrop" id="pdfFiledrop">
-                  <label class="filedrop-label" for="pdfInput" id="pdfFiledropLabel">
-                    Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>
-                  </label>
-                  <input type="file" id="pdfInput" accept="application/pdf">
-                </div>
-                <textarea id="fNotesText" style="display:none;" placeholder="Type chords / notation here..."></textarea>
-              </div>
-            </div>
-          </div>
+          <div class="sub" style="margin:20px 0 12px;font-weight:700;color:var(--ink);">Song Info</div>
+          <div class="field2"><label>Producer</label><input type="text" id="fProducer" placeholder="e.g. Metro Boomin"></div>
+          <div class="field2"><label>Writer</label><input type="text" id="fWriter" placeholder="e.g. Ostan Stars"></div>
+          <div class="field2"><label>Featuring</label><input type="text" id="fFeaturing" placeholder="e.g. Benny Joshua"></div>
+          <div class="field2"><label>Released on</label><input type="text" id="fReleased" placeholder="e.g. Jan 16, 2026"></div>
 
           <div class="save-row">
             <button class="btn btn-brass" id="saveBtn">Save</button>
-            <button class="btn btn-brass" id="saveExitBtn" style="display:none;">Save &amp; Exit</button>
-            <button class="btn btn-ghost" id="cancelEditBtn">Cancel</button>
+            <button class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Cancel edit</button>
             <span class="save-msg" id="saveMsg"></span>
           </div>
         </div>
-
-        <div class="editor-tips" id="editorTips" style="display:none;"></div>
       </div>
     </div>
-  </div>
 
-  <!-- Right-click quick-edit menu (admin only) -->
-  <div class="ctx-menu" id="ctxMenu">
-    <button type="button" data-ctx="title">Edit Title</button>
-    <button type="button" data-ctx="content" id="ctxContentLabel">Edit Lyrics</button>
-    <button type="button" data-ctx="image">Replace Image</button>
-    <button type="button" data-ctx="youtube">Edit YouTube URL</button>
-    <hr>
-    <button type="button" data-ctx="full">Full Edit</button>
-    <button type="button" data-ctx="delete" class="danger">Delete</button>
-  </div>
-
-  <!-- Quick-edit modal (single field) -->
-  <div class="qe-overlay" id="qeOverlay">
-    <div class="qe-modal">
-      <h3 id="qeTitle">Edit</h3>
-      <div id="qeBody"></div>
-      <div class="qe-actions">
-        <button class="btn btn-brass" id="qeSave">Save</button>
-        <button class="btn btn-ghost" id="qeCancel">Cancel</button>
+    <div id="detailView" style="display:none;">
+      <button type="button" class="back-link" id="detailBack">&larr; Back to list</button>
+      <div class="detail-card">
+        <div class="detail-edit-row" id="detailEditRow">
+          <button type="button" class="detail-edit-btn" id="detailEditLyricsBtn">Edit Lyrics</button>
+          <button type="button" class="detail-edit-btn" id="detailEditMetaBtn">Edit Metadata</button>
+        </div>
+        <div class="detail-head">
+          <img id="detailThumb" class="detail-thumb" style="display:none;" alt="">
+          <div>
+            <h2 id="detailTitle"></h2>
+            <div class="detail-meta" id="detailMeta"></div>
+          </div>
+        </div>
+        <div class="detail-body" id="detailBody"></div>
+        <div class="song-info" id="detailSongInfo" style="display:none;">
+          <h3>Song Info</h3>
+          <div id="detailSongInfoRows"></div>
+        </div>
       </div>
-      <div class="qe-msg" id="qeMsg"></div>
     </div>
   </div>
 
@@ -446,23 +396,6 @@ let pendingImage = null;     // { dataUrl, name } when uploading an image
 let existingImageUrl = null; // kept when editing without changing the image
 let pendingPdf = null;       // { dataUrl, name } when uploading a PDF
 let existingPdf = null;      // { pdfData, pdfName } kept when editing without re-uploading
-let editorMode = 'add';      // 'add' | 'lyrics' | 'meta' — which sections/buttons the editor page shows
-
-const LYRICS_TIPS_HTML = `
-  <h3>How to format lyrics</h3>
-  <ul>
-    <li>Type out all lyrics, even repeating song parts like the chorus</li>
-    <li>Break the lyrics down into individual lines</li>
-    <li>Leave a blank line between different song sections</li>
-    <li>Keep the spelling and line breaks close to how the song is sung</li>
-  </ul>`;
-const NOTES_TIPS_HTML = `
-  <h3>Tips for notes</h3>
-  <ul>
-    <li>A clear PDF scan or export usually reads best</li>
-    <li>Keep the PDF file under 500 KB</li>
-    <li>If typing chords/notation as text, keep one line per bar or phrase</li>
-  </ul>`;
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -512,6 +445,8 @@ function renderAuthArea(user, profileEmail){
     el('topbarSub').textContent = isAdmin ? 'Signed in as admin — add, edit or remove entries' : 'Signed in — add new entries';
     el('editOptRow').style.display = 'flex';
     el('previewToggleBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    el('quickAddBtn').style.display = previewMode ? 'none' : 'inline-block';
+    el('scrollListBtn').style.display = previewMode ? 'none' : 'inline-block';
     el('publicNote').style.display = previewMode ? 'block' : 'none';
   } else {
     area.innerHTML = '<div id="gisBtn"></div>';
@@ -519,8 +454,6 @@ function renderAuthArea(user, profileEmail){
     el('topbarSub').textContent = 'Browse sheet music — anyone can view';
     el('editOptRow').style.display = 'none';
     previewMode = false;
-    resetForm();
-    closeEditor();
     el('publicNote').style.display = 'block';
   }
 }
@@ -606,24 +539,22 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     el('heroDesc').textContent = CATEGORY_DESC[currentCategory];
     el('searchInput').value = filters[currentCategory].search;
     resetForm();
-    closeEditor();
+    renderFormForCategory(currentCategory);
     populateFilters(currentCategory);
     renderList();
   });
 });
 
-function openEditor(){
-  el('mainGrid').style.display = 'none';
-  el('detailView').style.display = 'none';
-  el('editorView').style.display = 'block';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function renderFormForCategory(cat){
+  if (!isSignedIn) return;
+  const isLyrics = cat === 'lyrics';
+  el('lyricsField').style.display = isLyrics ? 'block' : 'none';
+  el('notesFields').style.display = isLyrics ? 'none' : 'block';
+  el('formHeading').textContent = editingId ? ('Edit ' + (isLyrics ? 'lyrics' : cat + ' notes')) : ('Add ' + (isLyrics ? 'lyrics' : cat + ' notes'));
+  el('formSub').textContent = editingId
+    ? 'Updating an existing entry.'
+    : (isAdmin ? 'You can also edit or remove any entry below.' : 'Visible to anyone signed in with Google.');
 }
-function closeEditor(){
-  el('editorView').style.display = 'none';
-  el('detailView').style.display = 'none';
-  el('mainGrid').style.display = 'block';
-}
-el('editorBack').addEventListener('click', () => { resetForm(); closeEditor(); });
 
 /* ---------- Filters ---------- */
 
@@ -641,11 +572,25 @@ el('filterArtist').addEventListener('change', e => { filters[currentCategory].ar
 el('filterAlbum').addEventListener('change', e => { filters[currentCategory].album = e.target.value; renderList(); });
 el('searchInput').addEventListener('input', e => { filters[currentCategory].search = e.target.value.trim().toLowerCase(); renderList(); });
 
+/* ---------- Edit / Add modal open + close ---------- */
+
+function openEditModal(){
+  el('editModalOverlay').classList.add('open');
+}
+function closeEditModal(){
+  el('editModalOverlay').classList.remove('open');
+}
+el('editModalClose').addEventListener('click', resetForm);
+el('editModalOverlay').addEventListener('click', e => { if (e.target.id === 'editModalOverlay') resetForm(); });
+
 /* ---------- Top action row (Add / Manage / Preview) ---------- */
 
 el('quickAddBtn').addEventListener('click', () => {
   if (!isSignedIn) return;
-  startAdd(currentCategory);
+  resetForm();
+  renderFormForCategory(currentCategory);
+  openEditModal();
+  setTimeout(() => el('fTitle').focus(), 150);
 });
 
 el('scrollListBtn').addEventListener('click', () => {
@@ -655,8 +600,10 @@ el('scrollListBtn').addEventListener('click', () => {
 el('previewToggleBtn').addEventListener('click', () => {
   previewMode = !previewMode;
   el('previewToggleBtn').textContent = previewMode ? 'Exit Preview' : 'Preview as Visitor';
+  el('quickAddBtn').style.display = previewMode ? 'none' : 'inline-block';
+  el('scrollListBtn').style.display = previewMode ? 'none' : 'inline-block';
   el('publicNote').style.display = previewMode ? 'block' : 'none';
-  closeEditor();
+  if (previewMode) closeEditModal();
   renderList();
 });
 
@@ -701,11 +648,11 @@ function renderList(){
     }
     const ytBtn = ytId ? `<button class="track-btn track-btn-video" data-view-yt="${s.id}">YouTube</button>` : '';
     return `
-    <div class="track-row" data-row-id="${s.id}">
+    <div class="track-row${isAdmin && !previewMode ? ' track-row-editable' : ''}" data-row-id="${s.id}"${isAdmin && !previewMode ? ' title="Click to edit"' : ''}>
       <div class="track-index">${String(idx + 1).padStart(2,'0')}</div>
       ${thumb}
       <div class="track-info">
-        <div class="track-title" data-title-id="${s.id}">${escapeHtml(s.title || 'Untitled')}</div>
+        <div class="track-title">${escapeHtml(s.title || 'Untitled')}</div>
         ${s.artist ? `<div class="track-meta">${escapeHtml(s.artist)}</div>` : ''}
         ${s.album ? `<div class="track-album">${escapeHtml(s.album)}</div>` : ''}
       </div>
@@ -713,27 +660,11 @@ function renderList(){
       <div class="track-actions">
         ${contentBtn}
         ${ytBtn}
-        ${isAdmin && !previewMode ? `<button class="track-btn track-btn-edit" data-edit-content-id="${s.id}">${cat === 'lyrics' ? 'Edit Lyrics' : 'Edit Notes'}</button>` : ''}
-        ${isAdmin && !previewMode ? `<button class="track-btn track-btn-edit" data-edit-meta-id="${s.id}">Edit Metadata</button>` : ''}
+        ${isAdmin && !previewMode ? `<button class="track-btn track-btn-edit" data-edit-id="${s.id}">Edit</button>` : ''}
         ${isAdmin && !previewMode ? `<button class="track-btn track-btn-delete" data-del-id="${s.id}">Delete</button>` : ''}
       </div>
     </div>`;
   }).join('');
-
-  function openWhateverExists(s){
-    if (cat === 'lyrics') {
-      if (s.lyricsText) openDetail(s, cat, 'text');
-    } else {
-      if (s.contentType === 'pdf' && s.pdfData) openDetail(s, cat, 'pdf');
-      else if (s.contentType === 'text' && s.notesText) openDetail(s, cat, 'text');
-    }
-  }
-
-  // Clicking the title itself opens the same view as the Lyrics/Notes button
-  list.querySelectorAll('[data-title-id]').forEach(t => t.addEventListener('click', () => {
-    const s = items.find(i => i.id === t.dataset.titleId);
-    if (s) openWhateverExists(s);
-  }));
 
   list.querySelectorAll('[data-view-pdf]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewPdf);
@@ -748,13 +679,16 @@ function renderList(){
     if (s) openDetail(s, cat, 'youtube');
   }));
   if (isAdmin && !previewMode) {
-    list.querySelectorAll('[data-edit-content-id]').forEach(b => b.addEventListener('click', () => {
-      const s = items.find(i => i.id === b.dataset.editContentId);
-      if (s) startEditLyrics(s, cat);
-    }));
-    list.querySelectorAll('[data-edit-meta-id]').forEach(b => b.addEventListener('click', () => {
-      const s = items.find(i => i.id === b.dataset.editMetaId);
-      if (s) startEditMetadata(s, cat);
+    list.querySelectorAll('.track-row-editable').forEach(row => {
+      row.addEventListener('click', e => {
+        if (e.target.closest('button')) return;
+        const s = items.find(i => i.id === row.dataset.rowId);
+        if (s) startEdit(s, cat);
+      });
+    });
+    list.querySelectorAll('[data-edit-id]').forEach(b => b.addEventListener('click', () => {
+      const s = items.find(i => i.id === b.dataset.editId);
+      if (s) startEdit(s, cat);
     }));
     list.querySelectorAll('[data-del-id]').forEach(b => b.addEventListener('click', async () => {
       if (!confirm('Delete this entry? This cannot be undone.')) return;
@@ -763,15 +697,6 @@ function renderList(){
         if (editingId === b.dataset.delId) resetForm();
       } catch(e) { alert('Delete failed: ' + e.message); }
     }));
-
-    // Right-click on a row opens the quick-edit context menu
-    list.querySelectorAll('.track-row').forEach(row => {
-      row.addEventListener('contextmenu', e => {
-        e.preventDefault();
-        const s = items.find(i => i.id === row.dataset.rowId);
-        if (s) openCtxMenu(e, s, cat);
-      });
-    });
   }
 }
 
@@ -781,16 +706,15 @@ function openDetail(entry, cat, kind){
   el('mainGrid').style.display = 'none';
   el('detailView').style.display = 'block';
 
-  el('detailEyebrow').textContent = CATEGORY_LABELS[cat] || 'Song Lyrics';
   el('detailTitle').textContent = entry.title || 'Untitled';
   const metaLines = [];
   if (entry.artist) metaLines.push(escapeHtml(entry.artist));
   if (entry.album) metaLines.push(escapeHtml(entry.album));
   el('detailMeta').innerHTML = metaLines.join('<br>');
 
-  const thumb = el('detailThumb'), thumbPh = el('detailThumbPlaceholder');
-  if (entry.imageUrl) { thumb.src = entry.imageUrl; thumb.style.display = 'block'; thumbPh.style.display = 'none'; }
-  else { thumb.style.display = 'none'; thumbPh.style.display = 'flex'; }
+  const thumb = el('detailThumb');
+  if (entry.imageUrl) { thumb.src = entry.imageUrl; thumb.style.display = 'block'; }
+  else { thumb.style.display = 'none'; }
 
   const body = el('detailBody');
   body.className = 'detail-body';
@@ -807,6 +731,30 @@ function openDetail(entry, cat, kind){
     body.innerHTML = `<div class="detail-video-wrap"><iframe src="https://www.youtube.com/embed/${id}" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>`;
   }
 
+  const infoRows = [
+    ['Producer', entry.producer], ['Writer', entry.writer],
+    ['Featuring', entry.featuring], ['Released on', entry.releasedOn]
+  ].filter(([, v]) => v);
+  const songInfo = el('detailSongInfo');
+  if (infoRows.length) {
+    el('detailSongInfoRows').innerHTML = infoRows.map(([label, val]) =>
+      `<div class="song-info-row"><div class="song-info-label">${escapeHtml(label)}</div><div class="song-info-value">${escapeHtml(val)}</div></div>`
+    ).join('');
+    songInfo.style.display = 'block';
+  } else {
+    songInfo.style.display = 'none';
+  }
+
+  const editRow = el('detailEditRow');
+  if (isAdmin && !previewMode) {
+    editRow.style.display = 'flex';
+    el('detailEditLyricsBtn').textContent = cat === 'lyrics' ? 'Edit Lyrics' : 'Edit Notes';
+    el('detailEditLyricsBtn').onclick = () => { startEdit(entry, cat); setTimeout(() => (cat === 'lyrics' ? el('fLyrics') : el('fNotesText')).focus(), 150); };
+    el('detailEditMetaBtn').onclick = () => { startEdit(entry, cat); setTimeout(() => el('fTitle').focus(), 150); };
+  } else {
+    editRow.style.display = 'none';
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -817,7 +765,7 @@ function closeDetail(){
 }
 el('detailBack').addEventListener('click', closeDetail);
 
-/* ---------- Image / PDF pickers (main add/edit form) ---------- */
+/* ---------- Image / PDF pickers ---------- */
 
 document.querySelectorAll('#imageSeg button').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('#imageSeg button').forEach(x => x.classList.remove('active'));
@@ -863,14 +811,27 @@ el('pdfInput').addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-/* ---------- Edit / Reset (full-page editor) ---------- */
+/* ---------- Edit / Reset ---------- */
 
-// Fills in the meta fields (Title/Artist/Album/Image/YouTube) from an entry
-function fillMetaFields(entry){
+function startEdit(entry, cat){
+  if (!isAdmin) return;
+  editingId = entry.id;
+  editingCategory = cat;
+  currentCategory = cat;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  el('listHeading').textContent = CATEGORY_LABELS[cat];
+  el('heroTitle').textContent = CATEGORY_LABELS[cat];
+  el('heroDesc').textContent = CATEGORY_DESC[cat];
+  populateFilters(cat); renderList();
+
   el('fTitle').value = entry.title || '';
   el('fArtist').value = entry.artist || '';
   el('fAlbum').value = entry.album || '';
   el('fYoutube').value = entry.youtube || '';
+  el('fProducer').value = entry.producer || '';
+  el('fWriter').value = entry.writer || '';
+  el('fFeaturing').value = entry.featuring || '';
+  el('fReleased').value = entry.releasedOn || '';
 
   existingImageUrl = entry.imageUrl || null;
   pendingImage = null;
@@ -879,7 +840,7 @@ function fillMetaFields(entry){
     el('fImageUrl').value = entry.imageUrl;
   } else {
     imageMode = entry.imageUrl ? 'upload' : 'url';
-    el('fImageUrl').value = '';
+    el('fImageUrl').value = entry.imageUrl && !entry.imageUrl.startsWith('data:') ? entry.imageUrl : '';
   }
   document.querySelectorAll('#imageSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode === imageMode));
   el('fImageUrl').style.display = imageMode === 'url' ? 'block' : 'none';
@@ -887,14 +848,8 @@ function fillMetaFields(entry){
   el('imgFiledropLabel').innerHTML = entry.imageUrl && entry.imageUrl.startsWith('data:')
     ? 'Keeping current image<br><span style="font-size:11.5px;">Click to replace</span>'
     : 'Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>';
-}
 
-// Fills in the lyrics/notes content fields from an entry
-function fillContentFields(entry, cat){
-  const isLyrics = cat === 'lyrics';
-  el('lyricsField').style.display = isLyrics ? 'block' : 'none';
-  el('notesFields').style.display = isLyrics ? 'none' : 'block';
-  if (isLyrics) {
+  if (cat === 'lyrics') {
     el('fLyrics').value = entry.lyricsText || '';
   } else {
     existingPdf = entry.pdfData ? { pdfData: entry.pdfData, pdfName: entry.pdfName } : null;
@@ -908,116 +863,11 @@ function fillContentFields(entry, cat){
       ? `Keeping: ${escapeHtml(entry.pdfName)}<br><span style="font-size:11.5px;">Click to replace</span>`
       : 'Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>';
   }
-}
 
-// "+ Add New Entry" — full page with both metadata and content fields, like Genius's Add Song page
-function startAdd(cat){
-  if (!isSignedIn) return;
-  if (previewMode) { previewMode = false; el('previewToggleBtn').textContent = 'Preview as Visitor'; }
-  resetForm();
-  editorMode = 'add';
-  currentCategory = cat;
-  editingId = null;
-  editingCategory = null;
-  const isLyrics = cat === 'lyrics';
-
-  el('lyricsField').style.display = isLyrics ? 'block' : 'none';
-  el('notesFields').style.display = isLyrics ? 'none' : 'block';
-
-  el('metaSection').style.display = 'block';
-  el('contentSection').style.display = 'block';
-  el('editorTips').style.display = 'none';
-
-  el('editorHeading').textContent = 'Add ' + (isLyrics ? 'lyrics' : cat + ' notes');
-  el('editorSub').textContent = isAdmin ? 'You can also edit or remove any entry below.' : 'Visible to anyone signed in with Google.';
-  el('saveBtn').textContent = 'Save';
-  el('saveExitBtn').style.display = 'none';
-  el('cancelEditBtn').style.display = 'inline-block';
-
-  openEditor();
-  setTimeout(() => el('fTitle').focus(), 200);
-}
-
-// "Edit Metadata" — full page with only Title/Artist/Album/Image/YouTube
-function startEditMetadata(entry, cat){
-  if (!isAdmin) return;
-  resetForm();
-  editorMode = 'meta';
-  currentCategory = cat;
-  editingId = entry.id;
-  editingCategory = cat;
-
-  fillMetaFields(entry);
-
-  el('metaSection').style.display = 'block';
-  el('contentSection').style.display = 'none';
-  el('editorTips').style.display = 'none';
-
-  el('editorHeading').textContent = 'Edit Metadata';
-  el('editorSub').textContent = 'Update the title, artist, album, cover image, and YouTube link.';
-  el('saveBtn').textContent = 'Save';
-  el('saveExitBtn').style.display = 'none';
-  el('cancelEditBtn').style.display = 'inline-block';
-
-  openEditor();
-}
-
-// "Edit Lyrics" / "Edit Notes" — full page with only the content, plus formatting tips and Save & Exit
-function startEditLyrics(entry, cat){
-  if (!isAdmin) return;
-  resetForm();
-  editorMode = 'lyrics';
-  currentCategory = cat;
-  editingId = entry.id;
-  editingCategory = cat;
-  const isLyrics = cat === 'lyrics';
-
-  fillContentFields(entry, cat);
-
-  el('metaSection').style.display = 'none';
-  el('contentSection').style.display = 'block';
-  el('editorTips').style.display = 'block';
-  el('editorTips').innerHTML = isLyrics ? LYRICS_TIPS_HTML : NOTES_TIPS_HTML;
-
-  el('editorHeading').textContent = isLyrics ? 'Edit Lyrics' : 'Edit Notes';
-  el('editorSub').textContent = 'Update the ' + (isLyrics ? 'lyrics' : 'notes') + ' content for this entry.';
-  el('saveBtn').textContent = 'Save';
-  el('saveExitBtn').style.display = 'inline-block';
-  el('cancelEditBtn').style.display = 'inline-block';
-
-  openEditor();
-}
-
-// "Full Edit" (from the right-click quick menu) — combined page like Add, but updating an existing entry
-function startEdit(entry, cat){
-  if (!isAdmin) return;
-  resetForm();
-  editorMode = 'add';
-  currentCategory = cat;
-  editingId = entry.id;
-  editingCategory = cat;
-  const isLyrics = cat === 'lyrics';
-
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-  el('listHeading').textContent = CATEGORY_LABELS[cat];
-  el('heroTitle').textContent = CATEGORY_LABELS[cat];
-  el('heroDesc').textContent = CATEGORY_DESC[cat];
-  populateFilters(cat); renderList();
-
-  fillMetaFields(entry);
-  fillContentFields(entry, cat);
-
-  el('metaSection').style.display = 'block';
-  el('contentSection').style.display = 'block';
-  el('editorTips').style.display = 'none';
-
-  el('editorHeading').textContent = 'Edit ' + (isLyrics ? 'lyrics' : cat + ' notes');
-  el('editorSub').textContent = 'Updating an existing entry.';
+  renderFormForCategory(cat);
   el('saveBtn').textContent = 'Update';
-  el('saveExitBtn').style.display = 'none';
   el('cancelEditBtn').style.display = 'inline-block';
-
-  openEditor();
+  openEditModal();
 }
 
 function resetForm(){
@@ -1028,6 +878,7 @@ function resetForm(){
 
   el('fTitle').value=''; el('fArtist').value=''; el('fAlbum').value=''; el('fYoutube').value='';
   el('fImageUrl').value=''; el('fLyrics').value=''; el('fNotesText').value='';
+  el('fProducer').value=''; el('fWriter').value=''; el('fFeaturing').value=''; el('fReleased').value='';
   el('imgInput').value=''; el('pdfInput').value='';
 
   document.querySelectorAll('#imageSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode==='url'));
@@ -1043,266 +894,79 @@ function resetForm(){
   el('pdfFiledropLabel').innerHTML = 'Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>';
 
   el('saveBtn').textContent = 'Save';
-  el('saveExitBtn').style.display = 'none';
   el('cancelEditBtn').style.display = 'none';
-  el('editorTips').style.display = 'none';
-  el('saveMsg').textContent = '';
+  closeEditModal();
+  if (isSignedIn) renderFormForCategory(currentCategory);
 }
-el('cancelEditBtn').addEventListener('click', () => { resetForm(); closeEditor(); });
+el('cancelEditBtn').addEventListener('click', resetForm);
 
-/* ---------- Save (create or update) — full-page editor ---------- */
+/* ---------- Save (create or update) ---------- */
 
-function showSaveMsg(text, isErr){
-  el('saveMsg').textContent = text;
-  el('saveMsg').className = 'save-msg' + (isErr ? ' err' : '');
-}
-
-async function performSave(exitAfter){
-  if (!isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
-  if ((editorMode === 'meta' || editorMode === 'lyrics' || editingId) && !isAdmin) { showSaveMsg('Only the admin can edit entries.', true); return; }
+el('saveBtn').addEventListener('click', async () => {
+  if (!isSignedIn) { el('saveMsg').textContent = 'Please sign in first.'; el('saveMsg').className='save-msg err'; return; }
+  if (editingId && !isAdmin) { el('saveMsg').textContent = 'Only the admin can edit entries.'; el('saveMsg').className='save-msg err'; return; }
 
   const cat = editingId ? editingCategory : currentCategory;
-  const data = {};
+  const title = el('fTitle').value.trim();
+  const artist = el('fArtist').value.trim();
+  const album = el('fAlbum').value.trim();
+  const youtube = el('fYoutube').value.trim();
 
-  if (editorMode === 'add' || editorMode === 'meta') {
-    const title = el('fTitle').value.trim();
-    if (!title) { showSaveMsg('Title is required.', true); return; }
-    data.title = title;
-    data.artist = el('fArtist').value.trim();
-    data.album = el('fAlbum').value.trim();
-    data.youtube = el('fYoutube').value.trim();
-    if (imageMode === 'url') {
-      data.imageUrl = el('fImageUrl').value.trim() || null;
-    } else {
-      data.imageUrl = pendingImage ? pendingImage.dataUrl : existingImageUrl;
-    }
+  if (!title) { el('saveMsg').textContent = 'Title is required.'; el('saveMsg').className='save-msg err'; return; }
+
+  let imageUrl = null;
+  if (imageMode === 'url') {
+    imageUrl = el('fImageUrl').value.trim() || null;
+  } else {
+    imageUrl = pendingImage ? pendingImage.dataUrl : existingImageUrl;
   }
 
-  if (editorMode === 'add' || editorMode === 'lyrics') {
-    if (cat === 'lyrics') {
-      const lyricsText = el('fLyrics').value.trim();
-      if (!lyricsText) { showSaveMsg('Lyrics text is required.', true); return; }
-      data.lyricsText = lyricsText;
+  const data = { title, artist, album, youtube, imageUrl,
+    producer: el('fProducer').value.trim() || null,
+    writer: el('fWriter').value.trim() || null,
+    featuring: el('fFeaturing').value.trim() || null,
+    releasedOn: el('fReleased').value.trim() || null };
+
+  if (cat === 'lyrics') {
+    const lyricsText = el('fLyrics').value.trim();
+    if (!lyricsText) { el('saveMsg').textContent = 'Lyrics text is required.'; el('saveMsg').className='save-msg err'; return; }
+    data.lyricsText = lyricsText;
+  } else {
+    if (notesMode === 'pdf') {
+      const pdfData = pendingPdf ? pendingPdf.dataUrl : (existingPdf ? existingPdf.pdfData : null);
+      const pdfName = pendingPdf ? pendingPdf.name : (existingPdf ? existingPdf.pdfName : null);
+      if (!pdfData) { el('saveMsg').textContent = 'Please upload a PDF, or switch to "Type as text".'; el('saveMsg').className='save-msg err'; return; }
+      data.contentType = 'pdf'; data.pdfData = pdfData; data.pdfName = pdfName;
+      data.notesText = null;
     } else {
-      if (notesMode === 'pdf') {
-        const pdfData = pendingPdf ? pendingPdf.dataUrl : (existingPdf ? existingPdf.pdfData : null);
-        const pdfName = pendingPdf ? pendingPdf.name : (existingPdf ? existingPdf.pdfName : null);
-        if (!pdfData) { showSaveMsg('Please upload a PDF, or switch to "Type as text".', true); return; }
-        data.contentType = 'pdf'; data.pdfData = pdfData; data.pdfName = pdfName;
-        data.notesText = null;
-      } else {
-        const notesText = el('fNotesText').value.trim();
-        if (!notesText) { showSaveMsg('Please type the notes, or switch to "Upload PDF".', true); return; }
-        data.contentType = 'text'; data.notesText = notesText;
-        data.pdfData = null; data.pdfName = null;
-      }
+      const notesText = el('fNotesText').value.trim();
+      if (!notesText) { el('saveMsg').textContent = 'Please type the notes, or switch to "Upload PDF".'; el('saveMsg').className='save-msg err'; return; }
+      data.contentType = 'text'; data.notesText = notesText;
+      data.pdfData = null; data.pdfName = null;
     }
   }
 
   el('saveBtn').disabled = true;
-  el('saveExitBtn').disabled = true;
-  showSaveMsg(editingId ? 'Updating…' : 'Saving…', false);
+  el('saveMsg').textContent = editingId ? 'Updating…' : 'Saving…';
+  el('saveMsg').className = 'save-msg';
 
   try {
     if (editingId) {
       await db.collection(COLLECTIONS[cat]).doc(editingId).update(data);
-      showSaveMsg('Updated!', false);
+      el('saveMsg').textContent = 'Updated!';
     } else {
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
       data.createdBy = (pendingGoogleProfile && pendingGoogleProfile.email) || null;
       await db.collection(COLLECTIONS[cat]).add(data);
-      showSaveMsg('Saved!', false);
+      el('saveMsg').textContent = 'Saved!';
     }
-    if (exitAfter) {
-      resetForm();
-      closeEditor();
-    }
+    resetForm();
   } catch(e) {
-    showSaveMsg('Save failed: ' + e.message, true);
+    el('saveMsg').textContent = 'Save failed: ' + e.message;
+    el('saveMsg').className = 'save-msg err';
   } finally {
     el('saveBtn').disabled = false;
-    el('saveExitBtn').disabled = false;
     setTimeout(() => { el('saveMsg').textContent=''; }, 3000);
-  }
-}
-
-// In "Edit Lyrics"/"Edit Notes" mode, plain Save stays on the page (like Genius); Save & Exit returns to the list.
-// In "Add" and "Edit Metadata" mode there's only one Save button, and it always returns to the list.
-el('saveBtn').addEventListener('click', () => performSave(editorMode !== 'lyrics'));
-el('saveExitBtn').addEventListener('click', () => performSave(true));
-
-/* ---------- Right-click quick-edit context menu ---------- */
-
-let ctxEntry = null, ctxCat = null;
-
-function closeCtxMenu(){ el('ctxMenu').style.display = 'none'; }
-
-function openCtxMenu(e, entry, cat){
-  ctxEntry = entry; ctxCat = cat;
-  el('ctxContentLabel').textContent = cat === 'lyrics' ? 'Edit Lyrics' : 'Edit Notes';
-  const menu = el('ctxMenu');
-  menu.style.display = 'block';
-  const x = Math.min(e.clientX, window.innerWidth - 210);
-  const y = Math.min(e.clientY, window.innerHeight - 260);
-  menu.style.left = Math.max(8, x) + 'px';
-  menu.style.top = Math.max(8, y) + 'px';
-}
-
-document.addEventListener('click', e => { if (!el('ctxMenu').contains(e.target)) closeCtxMenu(); });
-document.addEventListener('scroll', closeCtxMenu, true);
-window.addEventListener('resize', closeCtxMenu);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCtxMenu(); });
-
-el('ctxMenu').querySelectorAll('button[data-ctx]').forEach(b => b.addEventListener('click', () => {
-  const action = b.dataset.ctx;
-  const entry = ctxEntry, cat = ctxCat;
-  closeCtxMenu();
-  if (!entry || !cat) return;
-  if (action === 'title') openQuickEdit(entry, cat, 'title');
-  else if (action === 'content') openQuickEdit(entry, cat, cat === 'lyrics' ? 'lyrics' : 'notes');
-  else if (action === 'image') openQuickEdit(entry, cat, 'image');
-  else if (action === 'youtube') openQuickEdit(entry, cat, 'youtube');
-  else if (action === 'full') startEdit(entry, cat);
-  else if (action === 'delete') {
-    if (!confirm('Delete this entry? This cannot be undone.')) return;
-    db.collection(COLLECTIONS[cat]).doc(entry.id).delete().catch(err => alert('Delete failed: ' + err.message));
-  }
-}));
-
-/* ---------- Quick-edit modal (single field, saves straight to Firestore) ---------- */
-
-let qeField = null, qeEntry = null, qeCat = null;
-let qePendingImage = null, qePendingPdf = null, qeImageMode = 'url', qeNotesMode = 'pdf';
-
-function openQuickEdit(entry, cat, field){
-  qeEntry = entry; qeCat = cat; qeField = field;
-  qePendingImage = null; qePendingPdf = null;
-  el('qeMsg').textContent = ''; el('qeMsg').style.color = 'var(--red)';
-  const body = el('qeBody');
-  const titles = { title:'Edit Title', lyrics:'Edit Lyrics', notes:'Edit Notes', image:'Replace Image', youtube:'Edit YouTube URL' };
-  el('qeTitle').textContent = titles[field] || 'Edit';
-
-  if (field === 'title') {
-    body.innerHTML = `<input type="text" id="qeInput" value="${escapeHtml(entry.title || '')}">`;
-  } else if (field === 'lyrics') {
-    body.innerHTML = `<textarea id="qeInput">${escapeHtml(entry.lyricsText || '')}</textarea>`;
-  } else if (field === 'youtube') {
-    body.innerHTML = `<input type="url" id="qeInput" placeholder="https://youtube.com/watch?v=..." value="${escapeHtml(entry.youtube || '')}">`;
-  } else if (field === 'image') {
-    const hasUrl = entry.imageUrl && !entry.imageUrl.startsWith('data:');
-    qeImageMode = 'url';
-    body.innerHTML = `
-      <div class="seg" id="qeImageSeg">
-        <button type="button" class="active" data-mode="url">Image URL</button>
-        <button type="button" data-mode="upload">Upload from device</button>
-      </div>
-      <input type="url" id="qeInput" placeholder="https://...jpg" value="${hasUrl ? escapeHtml(entry.imageUrl) : ''}">
-      <div class="filedrop" id="qeImgFiledrop" style="display:none;">
-        <label class="filedrop-label" for="qeImgInput" id="qeImgFiledropLabel">Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span></label>
-        <input type="file" id="qeImgInput" accept="image/*">
-      </div>`;
-    document.querySelectorAll('#qeImageSeg button').forEach(b => b.addEventListener('click', () => {
-      document.querySelectorAll('#qeImageSeg button').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      qeImageMode = b.dataset.mode;
-      el('qeInput').style.display = qeImageMode === 'url' ? 'block' : 'none';
-      el('qeImgFiledrop').style.display = qeImageMode === 'upload' ? 'block' : 'none';
-    }));
-    el('qeImgInput').addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      if (!file.type.startsWith('image/')) { el('qeMsg').textContent = 'Please choose an image file.'; return; }
-      if (file.size > 200*1024) { el('qeMsg').textContent = 'Image too large (keep under 200 KB).'; return; }
-      const reader = new FileReader();
-      reader.onload = () => {
-        qePendingImage = reader.result;
-        el('qeImgFiledropLabel').innerHTML = `Selected: ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
-      };
-      reader.readAsDataURL(file);
-    });
-  } else if (field === 'notes') {
-    qeNotesMode = entry.contentType === 'text' ? 'text' : 'pdf';
-    body.innerHTML = `
-      <div class="seg" id="qeNotesSeg">
-        <button type="button" class="${qeNotesMode==='pdf'?'active':''}" data-mode="pdf">Upload PDF</button>
-        <button type="button" class="${qeNotesMode==='text'?'active':''}" data-mode="text">Type as text</button>
-      </div>
-      <div class="filedrop" id="qePdfFiledrop" style="display:${qeNotesMode==='pdf'?'block':'none'};">
-        <label class="filedrop-label" for="qePdfInput" id="qePdfFiledropLabel">${entry.pdfName ? 'Keeping: '+escapeHtml(entry.pdfName)+'<br><span style="font-size:11.5px;">Click to replace</span>' : 'Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>'}</label>
-        <input type="file" id="qePdfInput" accept="application/pdf">
-      </div>
-      <textarea id="qeInput" style="display:${qeNotesMode==='text'?'block':'none'};">${escapeHtml(entry.notesText || '')}</textarea>`;
-    document.querySelectorAll('#qeNotesSeg button').forEach(b => b.addEventListener('click', () => {
-      document.querySelectorAll('#qeNotesSeg button').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      qeNotesMode = b.dataset.mode;
-      el('qePdfFiledrop').style.display = qeNotesMode === 'pdf' ? 'block' : 'none';
-      el('qeInput').style.display = qeNotesMode === 'text' ? 'block' : 'none';
-    }));
-    el('qePdfInput').addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      if (file.type !== 'application/pdf') { el('qeMsg').textContent = 'Please choose a PDF file.'; return; }
-      if (file.size > 500*1024) { el('qeMsg').textContent = 'PDF too large (keep under 500 KB).'; return; }
-      const reader = new FileReader();
-      reader.onload = () => {
-        qePendingPdf = { dataUrl: reader.result, name: file.name };
-        el('qePdfFiledropLabel').innerHTML = `Selected: ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  el('qeOverlay').style.display = 'flex';
-}
-
-function closeQuickEdit(){
-  el('qeOverlay').style.display = 'none';
-  qeEntry = null; qeField = null; qeCat = null;
-}
-el('qeCancel').addEventListener('click', closeQuickEdit);
-el('qeOverlay').addEventListener('click', e => { if (e.target === el('qeOverlay')) closeQuickEdit(); });
-
-el('qeSave').addEventListener('click', async () => {
-  if (!qeEntry || !qeCat || !qeField) return;
-  const data = {};
-
-  if (qeField === 'title') {
-    const v = el('qeInput').value.trim();
-    if (!v) { el('qeMsg').textContent = 'Title is required.'; return; }
-    data.title = v;
-  } else if (qeField === 'lyrics') {
-    const v = el('qeInput').value.trim();
-    if (!v) { el('qeMsg').textContent = 'Lyrics text is required.'; return; }
-    data.lyricsText = v;
-  } else if (qeField === 'youtube') {
-    data.youtube = el('qeInput').value.trim();
-  } else if (qeField === 'image') {
-    data.imageUrl = qeImageMode === 'url' ? (el('qeInput').value.trim() || null) : (qePendingImage || qeEntry.imageUrl || null);
-  } else if (qeField === 'notes') {
-    if (qeNotesMode === 'pdf') {
-      const pdfData = qePendingPdf ? qePendingPdf.dataUrl : (qeEntry.pdfData || null);
-      const pdfName = qePendingPdf ? qePendingPdf.name : (qeEntry.pdfName || null);
-      if (!pdfData) { el('qeMsg').textContent = 'Please upload a PDF, or switch to "Type as text".'; return; }
-      data.contentType = 'pdf'; data.pdfData = pdfData; data.pdfName = pdfName; data.notesText = null;
-    } else {
-      const v = el('qeInput').value.trim();
-      if (!v) { el('qeMsg').textContent = 'Please type the notes.'; return; }
-      data.contentType = 'text'; data.notesText = v; data.pdfData = null; data.pdfName = null;
-    }
-  }
-
-  el('qeSave').disabled = true;
-  el('qeMsg').style.color = 'var(--grey)';
-  el('qeMsg').textContent = 'Saving…';
-  try {
-    await db.collection(COLLECTIONS[qeCat]).doc(qeEntry.id).update(data);
-    closeQuickEdit();
-  } catch(e) {
-    el('qeMsg').style.color = 'var(--red)';
-    el('qeMsg').textContent = 'Save failed: ' + e.message;
-  } finally {
-    el('qeSave').disabled = false;
   }
 });
 
