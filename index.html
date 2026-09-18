@@ -76,8 +76,14 @@
     padding:14px 18px; font-size:13.5px; color:#7a7900; margin-bottom:24px; }
   .banner code{ background:rgba(0,0,0,0.06); padding:1px 5px; }
 
-  .grid{ display:grid; grid-template-columns:360px 1fr; gap:32px; align-items:start; }
-  @media (max-width:860px){ .grid{ grid-template-columns:1fr; } }
+  /* ---------- Add/Edit form: full-page modal ---------- */
+  .admin-modal-overlay{ position:fixed; inset:0; background:rgba(11,11,12,0.55); display:none;
+    align-items:flex-start; justify-content:center; z-index:900; padding:40px 16px; overflow-y:auto; }
+  .admin-modal{ width:100%; max-width:560px; }
+  .admin-modal .panel{ position:relative; }
+  .admin-modal-close{ position:absolute; top:14px; right:14px; background:none; border:none;
+    font-size:26px; line-height:1; color:var(--grey); padding:4px 8px; }
+  .admin-modal-close:hover{ color:var(--ink); }
 
   /* ---------- Admin panel ---------- */
   .panel{ background:var(--white); border:1px solid var(--line); }
@@ -244,77 +250,17 @@
     </div>
 
     <div id="mainGrid" style="display:none;">
-      <div class="grid">
-        <div class="panel" id="adminPanel" style="display:none;">
-          <div class="panel-body">
-            <h2 id="formHeading">Add lyrics</h2>
-            <div class="sub" id="formSub">Visible to anyone signed in with Google.</div>
-
-            <div class="field2"><label>Title</label><input type="text" id="fTitle" placeholder="e.g. Kannaalane"></div>
-            <div class="field2"><label>Artist</label><input type="text" id="fArtist" placeholder="e.g. Hariharan"></div>
-            <div class="field2"><label>Album</label><input type="text" id="fAlbum" placeholder="e.g. Bombay"></div>
-
-            <div class="field2">
-              <label>Image</label>
-              <div class="seg" id="imageSeg">
-                <button type="button" class="active" data-mode="url">Image URL</button>
-                <button type="button" data-mode="upload">Upload from device</button>
-              </div>
-              <input type="url" id="fImageUrl" placeholder="https://...jpg">
-              <div class="filedrop" id="imgFiledrop" style="display:none;margin-top:8px;">
-                <label class="filedrop-label" for="imgInput" id="imgFiledropLabel">
-                  Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>
-                </label>
-                <input type="file" id="imgInput" accept="image/*">
-              </div>
-            </div>
-
-            <!-- Lyrics-only field -->
-            <div class="field2" id="lyricsField">
-              <label>Lyrics text</label>
-              <textarea id="fLyrics" placeholder="Paste the full lyrics here..."></textarea>
-            </div>
-
-            <!-- Piano/Guitar-only fields -->
-            <div id="notesFields" style="display:none;">
-              <div class="field2">
-                <label>Notes content</label>
-                <div class="seg" id="notesSeg">
-                  <button type="button" class="active" data-mode="pdf">Upload PDF</button>
-                  <button type="button" data-mode="text">Type as text</button>
-                </div>
-                <div class="filedrop" id="pdfFiledrop">
-                  <label class="filedrop-label" for="pdfInput" id="pdfFiledropLabel">
-                    Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>
-                  </label>
-                  <input type="file" id="pdfInput" accept="application/pdf">
-                </div>
-                <textarea id="fNotesText" style="display:none;" placeholder="Type chords / notation here..."></textarea>
-              </div>
-            </div>
-
-            <div class="field2"><label>YouTube link</label><input type="url" id="fYoutube" placeholder="https://youtube.com/watch?v=..."></div>
-
-            <div class="save-row">
-              <button class="btn btn-brass" id="saveBtn">Save</button>
-              <button class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Cancel edit</button>
-              <span class="save-msg" id="saveMsg"></span>
-            </div>
-          </div>
+      <div id="listCol">
+        <div class="songs-head">
+          <h2 id="listHeading">Song Lyrics</h2>
+          <span class="songs-count" id="songsCount"></span>
         </div>
-
-        <div id="listCol">
-          <div class="songs-head">
-            <h2 id="listHeading">Song Lyrics</h2>
-            <span class="songs-count" id="songsCount"></span>
-          </div>
-          <div class="public-note" id="publicNote">Anyone can view and play these — sign in with Google to add more.</div>
-          <div class="filters-row">
-            <select id="filterArtist"><option value="">All artists</option></select>
-            <select id="filterAlbum"><option value="">All albums</option></select>
-          </div>
-          <div id="songsList"></div>
+        <div class="public-note" id="publicNote">Anyone can view and play these — sign in with Google to add more.</div>
+        <div class="filters-row">
+          <select id="filterArtist"><option value="">All artists</option></select>
+          <select id="filterAlbum"><option value="">All albums</option></select>
         </div>
+        <div id="songsList"></div>
       </div>
     </div>
 
@@ -335,6 +281,70 @@
         </div>
         <div class="detail-body-wrap">
           <div class="detail-body" id="detailBody"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit form — opens as its own full page, hidden the rest of the time -->
+  <div class="admin-modal-overlay" id="adminModalOverlay">
+    <div class="admin-modal">
+      <div class="panel" id="adminPanel">
+        <div class="panel-body">
+          <button type="button" class="admin-modal-close" id="adminModalClose" aria-label="Close">&times;</button>
+          <h2 id="formHeading">Add lyrics</h2>
+          <div class="sub" id="formSub">Visible to anyone signed in with Google.</div>
+
+          <div class="field2"><label>Title</label><input type="text" id="fTitle" placeholder="e.g. Kannaalane"></div>
+          <div class="field2"><label>Artist</label><input type="text" id="fArtist" placeholder="e.g. Hariharan"></div>
+          <div class="field2"><label>Album</label><input type="text" id="fAlbum" placeholder="e.g. Bombay"></div>
+
+          <div class="field2">
+            <label>Image</label>
+            <div class="seg" id="imageSeg">
+              <button type="button" class="active" data-mode="url">Image URL</button>
+              <button type="button" data-mode="upload">Upload from device</button>
+            </div>
+            <input type="url" id="fImageUrl" placeholder="https://...jpg">
+            <div class="filedrop" id="imgFiledrop" style="display:none;margin-top:8px;">
+              <label class="filedrop-label" for="imgInput" id="imgFiledropLabel">
+                Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>
+              </label>
+              <input type="file" id="imgInput" accept="image/*">
+            </div>
+          </div>
+
+          <!-- Lyrics-only field -->
+          <div class="field2" id="lyricsField">
+            <label>Lyrics text</label>
+            <textarea id="fLyrics" placeholder="Paste the full lyrics here..."></textarea>
+          </div>
+
+          <!-- Piano/Guitar-only fields -->
+          <div id="notesFields" style="display:none;">
+            <div class="field2">
+              <label>Notes content</label>
+              <div class="seg" id="notesSeg">
+                <button type="button" class="active" data-mode="pdf">Upload PDF</button>
+                <button type="button" data-mode="text">Type as text</button>
+              </div>
+              <div class="filedrop" id="pdfFiledrop">
+                <label class="filedrop-label" for="pdfInput" id="pdfFiledropLabel">
+                  Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>
+                </label>
+                <input type="file" id="pdfInput" accept="application/pdf">
+              </div>
+              <textarea id="fNotesText" style="display:none;" placeholder="Type chords / notation here..."></textarea>
+            </div>
+          </div>
+
+          <div class="field2"><label>YouTube link</label><input type="url" id="fYoutube" placeholder="https://youtube.com/watch?v=..."></div>
+
+          <div class="save-row">
+            <button class="btn btn-brass" id="saveBtn">Save</button>
+            <button class="btn btn-ghost" id="cancelEditBtn" style="display:none;">Cancel edit</button>
+            <span class="save-msg" id="saveMsg"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -468,7 +478,6 @@ function renderAuthArea(user, profileEmail){
     el('topbarSub').textContent = isAdmin ? 'Signed in as admin — add, edit or remove entries' : 'Signed in — add new entries';
     el('editOptRow').style.display = 'flex';
     el('previewToggleBtn').style.display = isAdmin ? 'inline-block' : 'none';
-    el('adminPanel').style.display = previewMode ? 'none' : 'block';
     el('publicNote').style.display = previewMode ? 'block' : 'none';
     renderFormForCategory(currentCategory);
   } else {
@@ -477,7 +486,8 @@ function renderAuthArea(user, profileEmail){
     el('topbarSub').textContent = 'Browse sheet music — anyone can view';
     el('editOptRow').style.display = 'none';
     previewMode = false;
-    el('adminPanel').style.display = 'none';
+    resetForm();
+    closeAdminModal();
     el('publicNote').style.display = 'block';
   }
 }
@@ -569,6 +579,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+function openAdminModal(){ el('adminModalOverlay').style.display = 'flex'; }
+function closeAdminModal(){ el('adminModalOverlay').style.display = 'none'; }
+el('adminModalClose').addEventListener('click', () => { resetForm(); closeAdminModal(); });
+el('adminModalOverlay').addEventListener('click', e => { if (e.target === el('adminModalOverlay')) { resetForm(); closeAdminModal(); } });
+
 function renderFormForCategory(cat){
   if (!isSignedIn) return;
   const isLyrics = cat === 'lyrics';
@@ -602,10 +617,9 @@ el('quickAddBtn').addEventListener('click', () => {
   if (!isSignedIn) return;
   if (previewMode) { previewMode = false; el('previewToggleBtn').textContent = 'Preview as Visitor'; }
   resetForm();
-  el('adminPanel').style.display = 'block';
-  el('publicNote').style.display = 'none';
-  el('adminPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  setTimeout(() => el('fTitle').focus(), 350);
+  renderFormForCategory(currentCategory);
+  openAdminModal();
+  setTimeout(() => el('fTitle').focus(), 200);
 });
 
 el('scrollListBtn').addEventListener('click', () => {
@@ -615,8 +629,8 @@ el('scrollListBtn').addEventListener('click', () => {
 el('previewToggleBtn').addEventListener('click', () => {
   previewMode = !previewMode;
   el('previewToggleBtn').textContent = previewMode ? 'Exit Preview' : 'Preview as Visitor';
-  el('adminPanel').style.display = previewMode ? 'none' : 'block';
   el('publicNote').style.display = previewMode ? 'block' : 'none';
+  closeAdminModal();
   renderList();
 });
 
@@ -870,7 +884,7 @@ function startEdit(entry, cat){
   renderFormForCategory(cat);
   el('saveBtn').textContent = 'Update';
   el('cancelEditBtn').style.display = 'inline-block';
-  el('adminPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+  openAdminModal();
 }
 
 function resetForm(){
@@ -899,7 +913,7 @@ function resetForm(){
   el('cancelEditBtn').style.display = 'none';
   if (isSignedIn) renderFormForCategory(currentCategory);
 }
-el('cancelEditBtn').addEventListener('click', resetForm);
+el('cancelEditBtn').addEventListener('click', () => { resetForm(); closeAdminModal(); });
 
 /* ---------- Save (create or update) — full form ---------- */
 
@@ -958,6 +972,7 @@ el('saveBtn').addEventListener('click', async () => {
       el('saveMsg').textContent = 'Saved!';
     }
     resetForm();
+    closeAdminModal();
   } catch(e) {
     el('saveMsg').textContent = 'Save failed: ' + e.message;
     el('saveMsg').className = 'save-msg err';
