@@ -25,26 +25,26 @@
   button{ font-family:'Inter',sans-serif; cursor:pointer; }
 
   /* ---------- Topbar ---------- */
-  .topbar{ background:var(--black); color:var(--cream); display:flex; align-items:center;
-    justify-content:space-between; padding:18px clamp(18px,4vw,48px); }
+  .topbar{ background:var(--yellow); color:var(--black); display:flex; align-items:center;
+    justify-content:space-between; padding:16px clamp(18px,4vw,48px); }
   .brand{ display:flex; align-items:center; gap:14px; }
-  .brand-mark{ width:38px; height:38px; background:var(--yellow); color:var(--black);
+  .brand-mark{ width:38px; height:38px; background:var(--black); color:var(--yellow);
     font-family:'Anton',sans-serif; font-size:20px; display:flex; align-items:center;
     justify-content:center; flex-shrink:0; }
-  .brand-title{ font-size:16px; font-weight:700; letter-spacing:0.01em; }
-  .brand-sub{ font-size:12px; color:rgba(247,245,238,0.5); margin-top:2px; }
+  .brand-title{ font-size:16px; font-weight:800; letter-spacing:0.01em; color:var(--black); }
+  .brand-sub{ font-size:12px; color:rgba(11,11,12,0.6); margin-top:2px; }
   .userchip{ display:flex; align-items:center; gap:10px; }
-  .avatar{ width:32px; height:32px; background:var(--yellow); color:var(--black);
+  .avatar{ width:32px; height:32px; background:var(--black); color:var(--yellow);
     font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; }
   .btn{ border:none; padding:9px 16px; font-size:13.5px; font-weight:700; }
-  .btn-ghost{ background:transparent; color:var(--cream); border:1px solid rgba(247,245,238,0.35); }
+  .btn-ghost{ background:transparent; color:var(--black); border:1px solid rgba(11,11,12,0.4); }
   .btn-brass{ background:var(--black); color:var(--yellow); }
-  #gisBtn .no-signin{ font-size:13px; color:rgba(247,245,238,0.45); }
+  #gisBtn .no-signin{ font-size:13px; color:rgba(11,11,12,0.55); }
   .topbar-mid{ flex:1; max-width:360px; margin:0 24px; }
-  .search-box{ width:100%; padding:9px 14px; border:1px solid rgba(247,245,238,0.25);
-    background:rgba(247,245,238,0.06); color:var(--cream); font-size:13.5px; font-family:'Inter',sans-serif; }
-  .search-box::placeholder{ color:rgba(247,245,238,0.4); }
-  .search-box:focus{ outline:none; border-color:var(--yellow); background:rgba(247,245,238,0.1); }
+  .search-box{ width:100%; padding:9px 14px; border:1px solid rgba(11,11,12,0.3);
+    background:var(--white); color:var(--ink); font-size:13.5px; font-family:'Inter',sans-serif; }
+  .search-box::placeholder{ color:#8c885f; }
+  .search-box:focus{ outline:none; border-color:var(--black); }
 
   /* ---------- Hero ---------- */
   .hero{ position:relative; background:var(--black); color:var(--cream); padding:10px clamp(18px,4vw,48px) 0; overflow:hidden; }
@@ -138,6 +138,13 @@
 
   .empty{ border:1px dashed var(--line); padding:40px 20px; text-align:center; color:var(--grey); font-size:14px; }
 
+  .edit-opt-row{ display:none; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:28px; }
+  .edit-opt-btn{ border:1.5px solid var(--black); background:var(--white); color:var(--ink);
+    padding:10px 20px; font-size:13.5px; font-weight:700; }
+  .edit-opt-btn:hover{ background:var(--black); color:var(--yellow); }
+  .edit-opt-btn.danger{ border-color:var(--red); color:var(--red); }
+  .edit-opt-btn.danger:hover{ background:var(--red); color:var(--white); }
+
   /* ---------- Detail (in-page lyrics / notes / video view) ---------- */
   .back-link{ background:none; border:none; padding:0; margin-bottom:20px; color:var(--ink);
     font-weight:700; font-size:14px; text-decoration:underline; }
@@ -196,6 +203,12 @@
   </div>
 
   <div class="wrap">
+    <div class="edit-opt-row" id="editOptRow">
+      <button type="button" class="edit-opt-btn" id="quickAddBtn">+ Add New Entry</button>
+      <button type="button" class="edit-opt-btn" id="scrollListBtn">Manage Existing Entries</button>
+      <button type="button" class="edit-opt-btn danger" id="previewToggleBtn">Preview as Visitor</button>
+    </div>
+
     <div class="banner" id="configBanner">
       This page hasn't been connected to Firebase yet. Open this file's &lt;script&gt; section and paste in your <code>firebaseConfig</code> values and your admin email — see the comments marked <code>EDIT THIS</code>.
     </div>
@@ -338,6 +351,7 @@ let filters = {
 
 let editingId = null;        // doc id being edited, or null when adding new
 let editingCategory = null;  // category of the entry being edited
+let previewMode = false;     // when true, admin temporarily sees the page as a visitor would
 let imageMode = 'url';       // 'url' | 'upload'
 let notesMode = 'pdf';       // 'pdf' | 'text'  (piano/guitar only)
 let pendingImage = null;     // { dataUrl, name } when uploading an image
@@ -383,21 +397,25 @@ function renderAuthArea(user, profileEmail){
     chip.innerHTML = `
       <div class="avatar">${escapeHtml((displayName)[0].toUpperCase())}</div>
       <div>
-        <div style="font-size:13.5px;font-weight:600;">${escapeHtml(displayName)}</div>
-        <div style="font-size:11.5px;color:rgba(247,245,238,0.5);">${escapeHtml(displayEmail)}${isAdmin ? ' · admin' : ''}</div>
+        <div style="font-size:13.5px;font-weight:700;color:var(--black);">${escapeHtml(displayName)}</div>
+        <div style="font-size:11.5px;color:rgba(11,11,12,0.6);">${escapeHtml(displayEmail)}${isAdmin ? ' · admin' : ''}</div>
       </div>
       <button class="btn btn-ghost" id="signOutBtn" style="margin-left:8px;">Sign out</button>
     `;
     area.appendChild(chip);
     el('signOutBtn').addEventListener('click', () => auth.signOut());
     el('topbarSub').textContent = isAdmin ? 'Signed in as admin — add, edit or remove entries' : 'Signed in — add new entries';
-    el('adminPanel').style.display = 'block';
-    el('publicNote').style.display = 'none';
+    el('editOptRow').style.display = 'flex';
+    el('previewToggleBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    el('adminPanel').style.display = previewMode ? 'none' : 'block';
+    el('publicNote').style.display = previewMode ? 'block' : 'none';
     renderFormForCategory(currentCategory);
   } else {
     area.innerHTML = '<div id="gisBtn"></div>';
     renderGisButton();
     el('topbarSub').textContent = 'Browse sheet music — anyone can view';
+    el('editOptRow').style.display = 'none';
+    previewMode = false;
     el('adminPanel').style.display = 'none';
     el('publicNote').style.display = 'block';
   }
@@ -517,6 +535,30 @@ el('filterArtist').addEventListener('change', e => { filters[currentCategory].ar
 el('filterAlbum').addEventListener('change', e => { filters[currentCategory].album = e.target.value; renderList(); });
 el('searchInput').addEventListener('input', e => { filters[currentCategory].search = e.target.value.trim().toLowerCase(); renderList(); });
 
+/* ---------- Top action row (Add / Manage / Preview) ---------- */
+
+el('quickAddBtn').addEventListener('click', () => {
+  if (!isSignedIn) return;
+  if (previewMode) { previewMode = false; el('previewToggleBtn').textContent = 'Preview as Visitor'; }
+  resetForm();
+  el('adminPanel').style.display = 'block';
+  el('publicNote').style.display = 'none';
+  el('adminPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => el('fTitle').focus(), 350);
+});
+
+el('scrollListBtn').addEventListener('click', () => {
+  el('listCol').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+el('previewToggleBtn').addEventListener('click', () => {
+  previewMode = !previewMode;
+  el('previewToggleBtn').textContent = previewMode ? 'Exit Preview' : 'Preview as Visitor';
+  el('adminPanel').style.display = previewMode ? 'none' : 'block';
+  el('publicNote').style.display = previewMode ? 'block' : 'none';
+  renderList();
+});
+
 /* ---------- List rendering ---------- */
 
 function renderList(){
@@ -570,8 +612,8 @@ function renderList(){
       <div class="track-actions">
         ${contentBtn}
         ${ytBtn}
-        ${isAdmin ? `<button class="track-btn track-btn-edit" data-edit-id="${s.id}">Edit</button>` : ''}
-        ${isAdmin ? `<button class="track-btn track-btn-delete" data-del-id="${s.id}">Delete</button>` : ''}
+        ${isAdmin && !previewMode ? `<button class="track-btn track-btn-edit" data-edit-id="${s.id}">Edit</button>` : ''}
+        ${isAdmin && !previewMode ? `<button class="track-btn track-btn-delete" data-del-id="${s.id}">Delete</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -588,7 +630,7 @@ function renderList(){
     const s = items.find(i => i.id === b.dataset.viewYt);
     if (s) openDetail(s, cat, 'youtube');
   }));
-  if (isAdmin) {
+  if (isAdmin && !previewMode) {
     list.querySelectorAll('[data-edit-id]').forEach(b => b.addEventListener('click', () => {
       const s = items.find(i => i.id === b.dataset.editId);
       if (s) startEdit(s, cat);
