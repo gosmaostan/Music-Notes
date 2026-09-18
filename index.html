@@ -58,6 +58,10 @@
   .hero-art{ width:112px; height:112px; object-fit:cover; flex-shrink:0; border:1px solid rgba(247,245,238,0.15); }
   .hero-art-placeholder{ display:flex; align-items:center; justify-content:center; background:#1c1c1c;
     color:rgba(247,245,238,0.35); font-size:34px; }
+  .hero-art-wrap{ position:relative; flex-shrink:0; }
+  .hero-art-edit-btn{ position:absolute; bottom:-10px; left:0; right:0; margin:0 auto; width:max-content;
+    background:var(--yellow); color:var(--black); border:none; font-size:11px; font-weight:800;
+    padding:4px 8px; display:none; }
   .hero-text{ flex:1; min-width:0; }
   .hero-eyebrow{ font-size:12.5px; font-weight:700; letter-spacing:0.02em; color:var(--yellow); margin-bottom:6px; }
   .hero-title{ font-family:'Anton',sans-serif; font-weight:400; font-size:clamp(34px,6vw,62px);
@@ -267,8 +271,11 @@
     <div class="hero-bg"></div>
     <div class="hero-inner">
       <div class="hero-top">
-        <img id="heroArt" class="hero-art" style="display:none;" alt="">
-        <div id="heroArtPlaceholder" class="hero-art hero-art-placeholder">&#9835;</div>
+        <div class="hero-art-wrap">
+          <img id="heroArt" class="hero-art" style="display:none;" alt="">
+          <div id="heroArtPlaceholder" class="hero-art hero-art-placeholder">&#9835;</div>
+          <button type="button" class="hero-art-edit-btn" id="heroArtEditBtn">Change Image</button>
+        </div>
         <div class="hero-text">
           <div class="hero-eyebrow">Collection</div>
           <h1 class="hero-title" id="heroTitle">Song Lyrics</h1>
@@ -475,6 +482,7 @@
       match /lyrics/{id}       { allow read: if true; allow write: if request.auth != null; }
       match /piano_notes/{id}  { allow read: if true; allow write: if request.auth != null; }
       match /guitar_notes/{id} { allow read: if true; allow write: if request.auth != null; }
+      match /category_meta/{id} { allow read: if true; allow write: if request.auth != null; }
     }
   }
 
@@ -523,6 +531,7 @@ let isSignedIn = false;
 let currentCategory = 'lyrics';
 let pendingGoogleProfile = null;
 let entriesCache = { lyrics: [], piano: [], guitar: [] };
+let categoryMeta = { lyrics: null, piano: null, guitar: null };
 let filters = {
   lyrics: { artist: '', album: '', search: '' },
   piano: { artist: '', album: '', search: '' },
@@ -654,12 +663,14 @@ function renderAuthArea(user, profileEmail){
     el('quickAddBtn').style.display = 'inline-block';
     el('previewToggleBtn').style.display = 'inline-block';
     el('publicNote').style.display = previewMode ? 'block' : 'none';
+    el('heroArtEditBtn').style.display = previewMode ? 'none' : 'block';
   } else {
     area.innerHTML = '<div id="gisBtn"></div>';
     renderGisButton();
     el('topbarSub').textContent = 'Browse sheet music — anyone can view';
     el('quickAddBtn').style.display = 'none';
     el('previewToggleBtn').style.display = 'none';
+    el('heroArtEditBtn').style.display = 'none';
     previewMode = false;
     resetForm();
     closeEditor();
@@ -736,6 +747,12 @@ if (isConfigured) {
       }
     });
   });
+
+  // Per-tab hero/cover image (Song Lyrics / Piano Notes / Guitar Notes), set via URL or device upload.
+  db.collection('category_meta').onSnapshot(snap => {
+    snap.forEach(doc => { categoryMeta[doc.id] = doc.data(); });
+    renderList();
+  }, () => {});
 }
 
 /* ---------- Tabs ---------- */
@@ -796,8 +813,18 @@ el('previewToggleBtn').addEventListener('click', () => {
   previewMode = !previewMode;
   el('previewToggleBtn').textContent = previewMode ? 'Exit Preview' : 'Preview as Visitor';
   el('publicNote').style.display = previewMode ? 'block' : 'none';
+  el('heroArtEditBtn').style.display = (isSignedIn && !previewMode) ? 'block' : 'none';
   closeEditor();
   renderList();
+});
+
+/* ---------- Hero / cover image (per tab: Song Lyrics, Piano Notes, Guitar Notes) ---------- */
+
+el('heroArtEditBtn').addEventListener('click', () => {
+  if (!isSignedIn || previewMode) return;
+  const cat = currentCategory;
+  const current = categoryMeta[cat] && categoryMeta[cat].heroImage;
+  openQuickEdit({ imageUrl: current || null }, cat, 'heroImage');
 });
 
 /* ---------- List rendering ---------- */
@@ -806,10 +833,13 @@ function renderList(){
   const cat = currentCategory;
   const allItems = entriesCache[cat] || [];
 
+  const manualHero = categoryMeta[cat] && categoryMeta[cat].heroImage;
   const firstWithArt = allItems.find(i => i.imageUrl);
+  const heroImgSrc = manualHero || (firstWithArt ? firstWithArt.imageUrl : null);
   const heroArt = el('heroArt'), heroArtPh = el('heroArtPlaceholder');
-  if (firstWithArt) { heroArt.src = firstWithArt.imageUrl; heroArt.style.display = 'block'; heroArtPh.style.display = 'none'; }
+  if (heroImgSrc) { heroArt.src = heroImgSrc; heroArt.style.display = 'block'; heroArtPh.style.display = 'none'; }
   else { heroArt.style.display = 'none'; heroArtPh.style.display = 'flex'; }
+  el('heroArtEditBtn').style.display = (isSignedIn && !previewMode) ? 'block' : 'none';
   el('heroCount').textContent = allItems.length + (allItems.length === 1 ? ' entry' : ' entries');
 
   let items = allItems;
@@ -1434,7 +1464,7 @@ function openQuickEdit(entry, cat, field){
   qePendingImage = null; qePendingPdf = null;
   el('qeMsg').textContent = ''; el('qeMsg').style.color = 'var(--red)';
   const body = el('qeBody');
-  const titles = { title:'Edit Title', lyrics:'Edit Lyrics', notes:'Edit Notes', image:'Replace Image', youtube:'Edit YouTube URL' };
+  const titles = { title:'Edit Title', lyrics:'Edit Lyrics', notes:'Edit Notes', image:'Replace Image', youtube:'Edit YouTube URL', heroImage: CATEGORY_LABELS[cat] + ' — Cover Image' };
   el('qeTitle').textContent = titles[field] || 'Edit';
 
   if (field === 'title') {
@@ -1443,7 +1473,7 @@ function openQuickEdit(entry, cat, field){
     body.innerHTML = `<textarea id="qeInput">${escapeHtml(entry.lyricsText || '')}</textarea>`;
   } else if (field === 'youtube') {
     body.innerHTML = `<input type="url" id="qeInput" placeholder="https://youtube.com/watch?v=..." value="${escapeHtml(entry.youtube || '')}">`;
-  } else if (field === 'image') {
+  } else if (field === 'image' || field === 'heroImage') {
     const hasUrl = entry.imageUrl && !entry.imageUrl.startsWith('data:');
     qeImageMode = 'url';
     body.innerHTML = `
@@ -1519,7 +1549,41 @@ el('qeCancel').addEventListener('click', closeQuickEdit);
 el('qeOverlay').addEventListener('click', e => { if (e.target === el('qeOverlay')) closeQuickEdit(); });
 
 el('qeSave').addEventListener('click', async () => {
-  if (!qeEntry || !qeCat || !qeField) return;
+  if (!qeCat || !qeField) return;
+
+  // Per-tab cover image saves to its own "category_meta" doc, not to a song entry.
+  if (qeField === 'heroImage') {
+    const imgVal = qeImageMode === 'url'
+      ? (el('qeInput').value.trim() || null)
+      : (qePendingImage || (qeEntry && qeEntry.imageUrl) || null);
+
+    el('qeSave').disabled = true;
+    el('qeMsg').style.color = 'var(--grey)';
+    el('qeMsg').textContent = 'Checking sign-in…';
+    try {
+      const { user, reason } = await getWriteUser();
+      if (!user) {
+        el('qeMsg').style.color = 'var(--red)';
+        el('qeMsg').textContent = reason;
+        return;
+      }
+      el('qeMsg').textContent = 'Saving…';
+      await db.collection('category_meta').doc(qeCat).set({
+        heroImage: imgVal,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: currentUserEmail()
+      }, { merge: true });
+      closeQuickEdit();
+    } catch(e) {
+      el('qeMsg').style.color = 'var(--red)';
+      el('qeMsg').textContent = 'Save failed: ' + explainError(e);
+    } finally {
+      el('qeSave').disabled = false;
+    }
+    return;
+  }
+
+  if (!qeEntry) return;
   const data = {};
 
   if (qeField === 'title') {
