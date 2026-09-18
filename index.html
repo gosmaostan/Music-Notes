@@ -1288,6 +1288,7 @@ async function performSave(exitAfter){
   showSaveMsg(editingId ? 'Updating…' : 'Saving…', false);
 
   try {
+    if (auth.currentUser) { await auth.currentUser.getIdToken(true); }
     if (editingId) {
       await db.collection(COLLECTIONS[cat]).doc(editingId).update(data);
       showSaveMsg('Updated!', false);
@@ -1302,7 +1303,8 @@ async function performSave(exitAfter){
       closeEditor();
     }
   } catch(e) {
-    showSaveMsg('Save failed: ' + e.message, true);
+    const debugEmail = (auth.currentUser && auth.currentUser.email) || 'none';
+    showSaveMsg('Save failed: ' + e.message + ' [signed in as: ' + debugEmail + ']', true);
   } finally {
     el('saveBtn').disabled = false;
     el('saveExitBtn').disabled = false;
@@ -1480,11 +1482,15 @@ el('qeSave').addEventListener('click', async () => {
   el('qeMsg').style.color = 'var(--grey)';
   el('qeMsg').textContent = 'Saving…';
   try {
+    // Force a fresh ID token before writing, in case the cached token
+    // is stale and doesn't carry the email claim Firestore rules check.
+    if (auth.currentUser) { await auth.currentUser.getIdToken(true); }
     await db.collection(COLLECTIONS[qeCat]).doc(qeEntry.id).update(data);
     closeQuickEdit();
   } catch(e) {
     el('qeMsg').style.color = 'var(--red)';
-    el('qeMsg').textContent = 'Save failed: ' + e.message;
+    const debugEmail = (auth.currentUser && auth.currentUser.email) || 'none';
+    el('qeMsg').textContent = 'Save failed: ' + e.message + ' [signed in as: ' + debugEmail + ']';
   } finally {
     el('qeSave').disabled = false;
   }
