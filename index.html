@@ -439,7 +439,7 @@
     </div>
   </div>
 
-  <!-- Right-click quick-edit menu (admin only) -->
+  <!-- Right-click quick-edit menu -->
   <div class="ctx-menu" id="ctxMenu">
     <button type="button" data-ctx="title">Edit Title</button>
     <button type="button" data-ctx="content" id="ctxContentLabel">Edit Lyrics</button>
@@ -464,6 +464,25 @@
   </div>
 
 <script>
+/*
+  =====================================================================
+  FIRESTORE RULES — paste these in Firebase Console → Firestore Database → Rules → Publish
+  (The page can only write if these rules allow it. Changing this HTML alone is not enough.)
+
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /lyrics/{id}       { allow read: if true; allow write: if request.auth != null; }
+      match /piano_notes/{id}  { allow read: if true; allow write: if request.auth != null; }
+      match /guitar_notes/{id} { allow read: if true; allow write: if request.auth != null; }
+    }
+  }
+
+  Also check: Firebase Console → Authentication → Settings → Authorized domains
+  must include  gosmaostan.github.io
+  =====================================================================
+*/
+
 const firebaseConfig = {
   apiKey: "AIzaSyALMvHmhkJwH48Jas5OMVUh2F4G-nK_-6c",
   authDomain: "music-notes-b3602.firebaseapp.com",
@@ -512,7 +531,7 @@ let filters = {
 
 let editingId = null;        // doc id being edited, or null when adding new
 let editingCategory = null;  // category of the entry being edited
-let previewMode = false;     // when true, admin temporarily sees the page as a visitor would
+let previewMode = false;     // when true, temporarily see the page as a visitor would
 let imageMode = 'url';       // 'url' | 'upload'
 let notesMode = 'pdf';       // 'pdf' | 'text'  (piano/guitar only)
 let pendingImage = null;     // { dataUrl, name } when uploading an image
@@ -565,6 +584,51 @@ function youtubeId(url){
   return m ? m[1] : null;
 }
 
+/* ---------- Write guard: makes sure the sign-in is valid BEFORE every save/delete ---------- */
+
+const SESSION_EXPIRED_MSG = 'Your sign-in session has expired. Click "Sign in with Google" at the top, then press Save again — your text is still here.';
+
+function currentUserEmail(){
+  const u = auth && auth.currentUser;
+  if (!u) return null;
+  return u.email
+    || (u.providerData && u.providerData[0] && u.providerData[0].email)
+    || (pendingGoogleProfile && pendingGoogleProfile.email)
+    || null;
+}
+
+// Forces a fresh login token so Firestore never receives an old/empty one.
+// Returns { user, reason } — user is null when the person must sign in again.
+async function getWriteUser(){
+  if (!auth || !auth.currentUser) return { user: null, reason: SESSION_EXPIRED_MSG };
+  try {
+    await auth.currentUser.getIdToken(true);
+  } catch (e) {
+    return { user: null, reason: 'Could not refresh your sign-in (' + (e.code || e.message) + '). Click Sign out, sign in with Google again, then press Save.' };
+  }
+  if (!auth.currentUser) return { user: null, reason: SESSION_EXPIRED_MSG };
+  return { user: auth.currentUser, reason: '' };
+}
+
+function explainError(e){
+  const who = currentUserEmail() || (auth && auth.currentUser ? auth.currentUser.uid : 'not signed in');
+  if (e && e.code === 'permission-denied') {
+    if (!auth || !auth.currentUser) return SESSION_EXPIRED_MSG;
+    return 'Firestore rules blocked this write. Publish the rules from the comment at the top of this file (allow write: if request.auth != null). [signed in as: ' + who + ']';
+  }
+  return ((e && e.message) ? e.message : String(e)) + ' [signed in as: ' + who + ']';
+}
+
+async function deleteEntry(cat, id){
+  if (!confirm('Delete this entry? This cannot be undone.')) return;
+  const { user, reason } = await getWriteUser();
+  if (!user) { alert(reason); return; }
+  try {
+    await db.collection(COLLECTIONS[cat]).doc(id).delete();
+    if (editingId === id) resetForm();
+  } catch(e) { alert('Delete failed: ' + explainError(e)); }
+}
+
 /* ---------- Auth ---------- */
 
 function renderAuthArea(user, profileEmail){
@@ -585,9 +649,10 @@ function renderAuthArea(user, profileEmail){
     `;
     area.appendChild(chip);
     el('signOutBtn').addEventListener('click', () => auth.signOut());
-    el('topbarSub').textContent = isAdmin ? 'Signed in as admin — add, edit or remove entries' : 'Signed in — add new entries';
+    // Any signed-in user can add/edit/delete entries, not just the admin.
+    el('topbarSub').textContent = 'Signed in — add, edit or remove entries';
     el('quickAddBtn').style.display = 'inline-block';
-    el('previewToggleBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    el('previewToggleBtn').style.display = 'inline-block';
     el('publicNote').style.display = previewMode ? 'block' : 'none';
   } else {
     area.innerHTML = '<div id="gisBtn"></div>';
@@ -605,7 +670,7 @@ function renderAuthArea(user, profileEmail){
 function handleCredentialResponse(response){
   pendingGoogleProfile = decodeJwt(response.credential);
   const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
-  auth.signInWithCredential(credential).catch(e => alert('Sign-in failed: ' + e.message));
+  auth.signInWithCredential(credential).catch(e => alert('Sign-in failed: ' + (e.code ? e.code + ' — ' : '') + e.message));
 }
 
 let gisReady = false;
@@ -643,7 +708,9 @@ if (isConfigured) {
   auth.onAuthStateChanged(user => {
     if (user) {
       isSignedIn = true;
-      const profileEmail = user.email || (pendingGoogleProfile && pendingGoogleProfile.email) || '';
+      const profileEmail = user.email
+        || (user.providerData && user.providerData[0] && user.providerData[0].email)
+        || (pendingGoogleProfile && pendingGoogleProfile.email) || '';
       isAdmin = !!profileEmail && profileEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
       renderAuthArea(user, profileEmail);
       renderList();
@@ -754,6 +821,9 @@ function renderList(){
   const list = el('songsList');
   el('songsCount').textContent = items.length ? (items.length + (items.length===1?' entry':' entries')) : '';
 
+  // Any signed-in user can add/edit/delete — not just the admin account.
+  const canEdit = isSignedIn && !previewMode;
+
   if (!items.length) {
     list.innerHTML = `<div class="empty">No entries yet${f.artist||f.album||f.search ? ' for this filter' : ''}. ${isSignedIn ? 'Use the form to add one.' : 'Sign in to add the first one.'}</div>`;
     return;
@@ -786,9 +856,9 @@ function renderList(){
       <div class="track-actions">
         ${contentBtn}
         ${ytBtn}
-        ${isAdmin && !previewMode ? `<button class="track-btn track-btn-edit" data-edit-content-id="${s.id}">${cat === 'lyrics' ? 'Edit Lyrics' : 'Edit Notes'}</button>` : ''}
-        ${isAdmin && !previewMode ? `<button class="track-btn track-btn-edit" data-edit-meta-id="${s.id}">Edit Metadata</button>` : ''}
-        ${isAdmin && !previewMode ? `<button class="track-btn track-btn-delete" data-del-id="${s.id}">Delete</button>` : ''}
+        ${canEdit ? `<button class="track-btn track-btn-edit" data-edit-content-id="${s.id}">${cat === 'lyrics' ? 'Edit Lyrics' : 'Edit Notes'}</button>` : ''}
+        ${canEdit ? `<button class="track-btn track-btn-edit" data-edit-meta-id="${s.id}">Edit Metadata</button>` : ''}
+        ${canEdit ? `<button class="track-btn track-btn-delete" data-del-id="${s.id}">Delete</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -820,7 +890,7 @@ function renderList(){
     const s = items.find(i => i.id === b.dataset.viewYt);
     if (s) openDetail(s, cat, 'youtube');
   }));
-  if (isAdmin && !previewMode) {
+  if (canEdit) {
     list.querySelectorAll('[data-edit-content-id]').forEach(b => b.addEventListener('click', () => {
       const s = items.find(i => i.id === b.dataset.editContentId);
       if (s) startEditLyrics(s, cat);
@@ -829,12 +899,8 @@ function renderList(){
       const s = items.find(i => i.id === b.dataset.editMetaId);
       if (s) startEditMetadata(s, cat);
     }));
-    list.querySelectorAll('[data-del-id]').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm('Delete this entry? This cannot be undone.')) return;
-      try {
-        await db.collection(COLLECTIONS[cat]).doc(b.dataset.delId).delete();
-        if (editingId === b.dataset.delId) resetForm();
-      } catch(e) { alert('Delete failed: ' + e.message); }
+    list.querySelectorAll('[data-del-id]').forEach(b => b.addEventListener('click', () => {
+      deleteEntry(cat, b.dataset.delId);
     }));
 
     // Right-click on a row opens the quick-edit context menu
@@ -904,8 +970,7 @@ function renderDetailActions(entry, cat){
   const actions = el('detailActions');
   actions.innerHTML = '';
 
-  // Show the two edit actions for any signed-in editor.
-  // The actual Firestore rules should still protect writes on the backend.
+  // Any signed-in user can edit — Firestore rules are what actually protect writes.
   if (!isSignedIn || previewMode) return;
 
   if (cat === 'lyrics') {
@@ -1106,7 +1171,7 @@ function startAdd(cat){
   el('editorTips').style.display = 'none';
 
   el('editorHeading').textContent = 'Add ' + (isLyrics ? 'lyrics' : cat + ' notes');
-  el('editorSub').textContent = isAdmin ? 'You can also edit or remove any entry below.' : 'Visible to anyone signed in with Google.';
+  el('editorSub').textContent = 'Visible to anyone signed in with Google.';
   el('saveBtn').textContent = 'Save';
   el('saveExitBtn').style.display = 'none';
   el('cancelEditBtn').style.display = 'inline-block';
@@ -1167,7 +1232,7 @@ function startEditLyrics(entry, cat){
 
 // "Full Edit" (from the right-click quick menu) — combined page like Add, but updating an existing entry
 function startEdit(entry, cat){
-  if (!isAdmin) return;
+  if (!isSignedIn) return;
   resetForm();
   editorMode = 'add';
   currentCategory = cat;
@@ -1238,11 +1303,6 @@ function showSaveMsg(text, isErr){
 
 async function performSave(exitAfter){
   if (!isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
-  if ((editorMode === 'meta' || editorMode === 'lyrics') && !isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
-  if (!auth.currentUser) {
-    showSaveMsg('Your sign-in session has expired. Click "Sign in with Google" at the top, then press Save again — your text won\'t be lost.', true);
-    return;
-  }
 
   const cat = editingId ? editingCategory : currentCategory;
   const data = {};
@@ -1290,15 +1350,24 @@ async function performSave(exitAfter){
 
   el('saveBtn').disabled = true;
   el('saveExitBtn').disabled = true;
-  showSaveMsg(editingId ? 'Updating…' : 'Saving…', false);
+  showSaveMsg('Checking sign-in…', false);
 
   try {
+    // Make sure the Google/Firebase login is still valid (refreshes the token) before writing.
+    const { user, reason } = await getWriteUser();
+    if (!user) { showSaveMsg(reason, true); return; }
+    const email = currentUserEmail();
+
+    showSaveMsg(editingId ? 'Updating…' : 'Saving…', false);
+
     if (editingId) {
+      data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      data.updatedBy = email;
       await db.collection(COLLECTIONS[cat]).doc(editingId).update(data);
       showSaveMsg('Updated!', false);
     } else {
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      data.createdBy = (pendingGoogleProfile && pendingGoogleProfile.email) || null;
+      data.createdBy = email;
       await db.collection(COLLECTIONS[cat]).add(data);
       showSaveMsg('Saved!', false);
     }
@@ -1307,12 +1376,11 @@ async function performSave(exitAfter){
       closeEditor();
     }
   } catch(e) {
-    const debugEmail = (auth.currentUser && auth.currentUser.email) || 'none';
-    showSaveMsg('Save failed: ' + e.message + ' [signed in as: ' + debugEmail + ']', true);
+    showSaveMsg('Save failed: ' + explainError(e), true);
   } finally {
     el('saveBtn').disabled = false;
     el('saveExitBtn').disabled = false;
-    setTimeout(() => { el('saveMsg').textContent=''; }, 3000);
+    setTimeout(() => { el('saveMsg').textContent=''; }, 8000);
   }
 }
 
@@ -1353,10 +1421,7 @@ el('ctxMenu').querySelectorAll('button[data-ctx]').forEach(b => b.addEventListen
   else if (action === 'image') openQuickEdit(entry, cat, 'image');
   else if (action === 'youtube') openQuickEdit(entry, cat, 'youtube');
   else if (action === 'full') startEdit(entry, cat);
-  else if (action === 'delete') {
-    if (!confirm('Delete this entry? This cannot be undone.')) return;
-    db.collection(COLLECTIONS[cat]).doc(entry.id).delete().catch(err => alert('Delete failed: ' + err.message));
-  }
+  else if (action === 'delete') deleteEntry(cat, entry.id);
 }));
 
 /* ---------- Quick-edit modal (single field, saves straight to Firestore) ---------- */
@@ -1455,11 +1520,6 @@ el('qeOverlay').addEventListener('click', e => { if (e.target === el('qeOverlay'
 
 el('qeSave').addEventListener('click', async () => {
   if (!qeEntry || !qeCat || !qeField) return;
-  if (!auth.currentUser) {
-    el('qeMsg').style.color = 'var(--red)';
-    el('qeMsg').textContent = 'Your sign-in session has expired. Sign in with Google again (top of the page), then press Save again.';
-    return;
-  }
   const data = {};
 
   if (qeField === 'title') {
@@ -1489,14 +1549,22 @@ el('qeSave').addEventListener('click', async () => {
 
   el('qeSave').disabled = true;
   el('qeMsg').style.color = 'var(--grey)';
-  el('qeMsg').textContent = 'Saving…';
+  el('qeMsg').textContent = 'Checking sign-in…';
   try {
+    const { user, reason } = await getWriteUser();
+    if (!user) {
+      el('qeMsg').style.color = 'var(--red)';
+      el('qeMsg').textContent = reason;
+      return;
+    }
+    el('qeMsg').textContent = 'Saving…';
+    data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+    data.updatedBy = currentUserEmail();
     await db.collection(COLLECTIONS[qeCat]).doc(qeEntry.id).update(data);
     closeQuickEdit();
   } catch(e) {
     el('qeMsg').style.color = 'var(--red)';
-    const debugEmail = (auth.currentUser && auth.currentUser.email) || 'none';
-    el('qeMsg').textContent = 'Save failed: ' + e.message + ' [signed in as: ' + debugEmail + ']';
+    el('qeMsg').textContent = 'Save failed: ' + explainError(e);
   } finally {
     el('qeSave').disabled = false;
   }
