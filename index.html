@@ -486,6 +486,7 @@ let app, auth, db;
 if (isConfigured) {
   app = firebase.initializeApp(firebaseConfig);
   auth = firebase.auth();
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   db = firebase.firestore();
 }
 
@@ -1238,6 +1239,10 @@ function showSaveMsg(text, isErr){
 async function performSave(exitAfter){
   if (!isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
   if ((editorMode === 'meta' || editorMode === 'lyrics') && !isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
+  if (!auth.currentUser) {
+    showSaveMsg('Your sign-in session has expired. Click "Sign in with Google" at the top, then press Save again — your text won\'t be lost.', true);
+    return;
+  }
 
   const cat = editingId ? editingCategory : currentCategory;
   const data = {};
@@ -1451,6 +1456,11 @@ el('qeOverlay').addEventListener('click', e => { if (e.target === el('qeOverlay'
 
 el('qeSave').addEventListener('click', async () => {
   if (!qeEntry || !qeCat || !qeField) return;
+  if (!auth.currentUser) {
+    el('qeMsg').style.color = 'var(--red)';
+    el('qeMsg').textContent = 'Your sign-in session has expired. Sign in with Google again (top of the page), then press Save again.';
+    return;
+  }
   const data = {};
 
   if (qeField === 'title') {
