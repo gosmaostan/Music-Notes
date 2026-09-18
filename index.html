@@ -186,9 +186,11 @@
   #detailTitle{ font-family:'Anton',sans-serif; font-weight:400; font-size:clamp(24px,4vw,38px); line-height:1.02; }
   .detail-meta{ font-size:14px; color:rgba(247,245,238,0.65); line-height:1.7; margin-top:8px; }
   .detail-actions{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
-  .detail-edit-btn{ border:1px solid rgba(247,245,238,0.35); background:transparent; color:var(--cream);
-    padding:8px 13px; font-size:12.5px; font-weight:700; }
-  .detail-edit-btn:hover{ background:var(--yellow); color:var(--black); border-color:var(--yellow); }
+  .detail-edit-btn{ border:2px solid var(--yellow); background:var(--yellow); color:var(--black);
+    padding:9px 15px; font-size:12.5px; font-weight:800; }
+  .detail-edit-btn + .detail-edit-btn{ background:var(--white); color:var(--black); border-color:var(--white); }
+  .detail-edit-btn:hover{ background:var(--white); color:var(--black); border-color:var(--white); }
+  .detail-edit-btn + .detail-edit-btn:hover{ background:var(--yellow); border-color:var(--yellow); }
   .detail-layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:28px; align-items:start; }
   .detail-main{ min-width:0; }
   .detail-sidebar{ display:flex; flex-direction:column; gap:14px; }
@@ -901,7 +903,9 @@ function renderDetailActions(entry, cat){
   const actions = el('detailActions');
   actions.innerHTML = '';
 
-  if (!isAdmin || previewMode) return;
+  // Show the two edit actions for any signed-in editor.
+  // The actual Firestore rules should still protect writes on the backend.
+  if (!isSignedIn || previewMode) return;
 
   if (cat === 'lyrics') {
     const lyricsBtn = document.createElement('button');
@@ -1112,7 +1116,7 @@ function startAdd(cat){
 
 // "Edit Metadata" — full page with song details, credits, release date, image and YouTube
 function startEditMetadata(entry, cat){
-  if (!isAdmin) return;
+  if (!isSignedIn) return;
   resetForm();
   editorMode = 'meta';
   currentCategory = cat;
@@ -1136,7 +1140,7 @@ function startEditMetadata(entry, cat){
 
 // "Edit Lyrics" / "Edit Notes" — full page with only the content, plus formatting tips and Save & Exit
 function startEditLyrics(entry, cat){
-  if (!isAdmin) return;
+  if (!isSignedIn) return;
   resetForm();
   editorMode = 'lyrics';
   currentCategory = cat;
@@ -1233,7 +1237,7 @@ function showSaveMsg(text, isErr){
 
 async function performSave(exitAfter){
   if (!isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
-  if ((editorMode === 'meta' || editorMode === 'lyrics' || editingId) && !isAdmin) { showSaveMsg('Only the admin can edit entries.', true); return; }
+  if ((editorMode === 'meta' || editorMode === 'lyrics') && !isSignedIn) { showSaveMsg('Please sign in first.', true); return; }
 
   const cat = editingId ? editingCategory : currentCategory;
   const data = {};
