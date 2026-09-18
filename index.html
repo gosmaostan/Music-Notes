@@ -146,20 +146,29 @@
   .track-btn-edit{ border-color:var(--line); color:var(--ink); }
   .track-btn-delete{ color:var(--red); text-decoration:underline; }
   .track-btn-disabled{ border:1px dashed var(--line); color:#b4ac93; padding:7px 12px; font-size:12.5px; }
+  @media (max-width:820px){
+    .detail-layout{ grid-template-columns:1fr; }
+    .detail-sidebar{ order:2; }
+    .topbar-tab-actions{ padding-left:10px; }
+  }
   @media (max-width:640px){
     .track-row{ grid-template-columns:1fr; grid-template-areas:"info" "meta" "actions"; }
     .track-index, .track-thumb, .track-date{ display:none; }
     .track-actions{ justify-content:flex-start; }
+    .topbar-tab-actions{ width:auto; }
+    .top-action-btn{ padding:7px 10px; font-size:11.5px; }
   }
 
   .empty{ border:1px dashed var(--line); padding:40px 20px; text-align:center; color:var(--grey); font-size:14px; }
 
-  .edit-opt-row{ display:none; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:28px; }
-  .edit-opt-btn{ border:1.5px solid var(--black); background:var(--white); color:var(--ink);
-    padding:10px 20px; font-size:13.5px; font-weight:700; }
-  .edit-opt-btn:hover{ background:var(--black); color:var(--yellow); }
-  .edit-opt-btn.danger{ border-color:var(--red); color:var(--red); }
-  .edit-opt-btn.danger:hover{ background:var(--red); color:var(--white); }
+  /* ---------- Top yellow action area ---------- */
+  .topbar-tabs{ align-items:center; }
+  .topbar-tab-actions{ margin-left:auto; display:flex; align-items:center; gap:8px; padding-left:20px; }
+  .top-action-btn{ border:1px solid rgba(11,11,12,0.45); background:var(--black); color:var(--yellow);
+    padding:8px 14px; font-size:12.5px; font-weight:800; white-space:nowrap; }
+  .top-action-btn:hover{ background:#222; }
+  .top-action-btn.preview{ background:transparent; color:var(--black); }
+  .top-action-btn.preview:hover{ background:rgba(11,11,12,0.08); }
 
   /* ---------- Detail (in-page lyrics / notes / video view) ---------- */
   .back-link{ background:none; border:none; padding:0; margin-bottom:20px; color:var(--ink);
@@ -177,6 +186,24 @@
   #detailTitle{ font-family:'Anton',sans-serif; font-weight:400; font-size:clamp(24px,4vw,38px); line-height:1.02; }
   .detail-meta{ font-size:14px; color:rgba(247,245,238,0.65); line-height:1.7; margin-top:8px; }
   .detail-actions{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .detail-edit-btn{ border:1px solid rgba(247,245,238,0.35); background:transparent; color:var(--cream);
+    padding:8px 13px; font-size:12.5px; font-weight:700; }
+  .detail-edit-btn:hover{ background:var(--yellow); color:var(--black); border-color:var(--yellow); }
+  .detail-layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:28px; align-items:start; }
+  .detail-main{ min-width:0; }
+  .detail-sidebar{ display:flex; flex-direction:column; gap:14px; }
+  .side-card{ border:1px solid var(--line); background:var(--cream); padding:18px; }
+  .side-card h3{ font-size:14px; font-weight:800; margin-bottom:12px; }
+  .side-card p{ margin:0; font-size:13.5px; line-height:1.7; color:var(--grey); white-space:pre-wrap; }
+  .song-info-list{ margin:0; padding:0; }
+  .song-info-row{ display:grid; grid-template-columns:105px 1fr; gap:10px; padding:8px 0;
+    border-bottom:1px solid var(--line); font-size:13px; }
+  .song-info-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .song-info-label{ color:var(--grey); }
+  .song-info-value{ color:var(--ink); font-weight:600; overflow-wrap:anywhere; }
+  .side-link-btn{ width:100%; border:1px solid var(--line); background:var(--white); color:var(--ink);
+    padding:9px 12px; font-size:12.5px; font-weight:700; text-align:left; }
+  .side-link-btn:hover{ background:var(--black); color:var(--yellow); }
   .detail-body-wrap{ padding:28px; }
   .detail-body.text-mode{ white-space:pre-wrap; font-size:15px; line-height:1.9; color:var(--ink); }
   .detail-body iframe{ width:100%; height:75vh; border:none; display:block; background:#2b2b2b; }
@@ -228,6 +255,10 @@
     <button class="tab-btn active" data-cat="lyrics">Song Lyrics</button>
     <button class="tab-btn" data-cat="piano">Piano Notes</button>
     <button class="tab-btn" data-cat="guitar">Guitar Notes</button>
+    <div class="topbar-tab-actions">
+      <button type="button" class="top-action-btn" id="quickAddBtn" style="display:none;">+ Add New Entry</button>
+      <button type="button" class="top-action-btn preview" id="previewToggleBtn" style="display:none;">Preview as Visitor</button>
+    </div>
   </div>
 
   <div class="hero">
@@ -247,12 +278,6 @@
   </div>
 
   <div class="wrap">
-    <div class="edit-opt-row" id="editOptRow">
-      <button type="button" class="edit-opt-btn" id="quickAddBtn">+ Add New Entry</button>
-      <button type="button" class="edit-opt-btn" id="scrollListBtn">Manage Existing Entries</button>
-      <button type="button" class="edit-opt-btn danger" id="previewToggleBtn">Preview as Visitor</button>
-    </div>
-
     <div class="banner" id="configBanner">
       This page hasn't been connected to Firebase yet. Open this file's &lt;script&gt; section and paste in your <code>firebaseConfig</code> values and your admin email — see the comments marked <code>EDIT THIS</code>.
     </div>
@@ -284,11 +309,50 @@
               <div class="detail-eyebrow" id="detailEyebrow">Song Lyrics</div>
               <h2 id="detailTitle"></h2>
               <div class="detail-meta" id="detailMeta"></div>
+              <div class="detail-actions" id="detailActions"></div>
             </div>
           </div>
         </div>
+
         <div class="detail-body-wrap">
-          <div class="detail-body" id="detailBody"></div>
+          <div class="detail-layout">
+            <div class="detail-main">
+              <div class="detail-body" id="detailBody"></div>
+            </div>
+
+            <aside class="detail-sidebar">
+              <div class="side-card" id="songAboutCard">
+                <h3>About</h3>
+                <p id="detailAbout">No song bio has been added yet.</p>
+              </div>
+
+              <div class="side-card" id="songLyricsSideCard">
+                <h3>Lyrics</h3>
+                <div id="detailLyricsSide"></div>
+              </div>
+
+              <div class="side-card">
+                <h3>Song Info</h3>
+                <div class="song-info-list">
+                  <div class="song-info-row" id="infoWriterRow">
+                    <div class="song-info-label">Writer</div><div class="song-info-value" id="detailWriter">—</div>
+                  </div>
+                  <div class="song-info-row" id="infoFeaturingRow">
+                    <div class="song-info-label">Featuring</div><div class="song-info-value" id="detailFeaturing">—</div>
+                  </div>
+                  <div class="song-info-row" id="infoProducerRow">
+                    <div class="song-info-label">Producer</div><div class="song-info-value" id="detailProducer">—</div>
+                  </div>
+                  <div class="song-info-row" id="infoMusicDirectorRow">
+                    <div class="song-info-label">Music Director</div><div class="song-info-value" id="detailMusicDirector">—</div>
+                  </div>
+                  <div class="song-info-row" id="infoReleaseDateRow">
+                    <div class="song-info-label">Released on</div><div class="song-info-value" id="detailReleaseDate">—</div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
     </div>
@@ -305,11 +369,17 @@
       <div class="editor-body-wrap">
         <div class="editor-main">
 
-          <!-- Title / Artist / Album / Image / YouTube — shown for "Add" and "Edit Metadata" -->
+          <!-- Song metadata — shown for "Add" and "Edit Metadata" -->
           <div id="metaSection">
             <div class="field2"><label>Title</label><input type="text" id="fTitle" placeholder="e.g. Kannaalane"></div>
             <div class="field2"><label>Artist</label><input type="text" id="fArtist" placeholder="e.g. Hariharan"></div>
             <div class="field2"><label>Album</label><input type="text" id="fAlbum" placeholder="e.g. Bombay"></div>
+            <div class="field2"><label>Song About</label><textarea id="fAbout" placeholder="Write a short description or bio for the song..."></textarea></div>
+            <div class="field2"><label>Writer</label><input type="text" id="fWriter" placeholder="e.g. Vairamuthu"></div>
+            <div class="field2"><label>Featuring</label><input type="text" id="fFeaturing" placeholder="e.g. Artist / Vocalist / Guest"></div>
+            <div class="field2"><label>Producer</label><input type="text" id="fProducer" placeholder="e.g. Producer name"></div>
+            <div class="field2"><label>Music Director</label><input type="text" id="fMusicDirector" placeholder="e.g. A. R. Rahman"></div>
+            <div class="field2"><label>Release Date</label><input type="date" id="fReleaseDate"></div>
 
             <div class="field2">
               <label>Image</label>
@@ -447,6 +517,9 @@ let existingImageUrl = null; // kept when editing without changing the image
 let pendingPdf = null;       // { dataUrl, name } when uploading a PDF
 let existingPdf = null;      // { pdfData, pdfName } kept when editing without re-uploading
 let editorMode = 'add';      // 'add' | 'lyrics' | 'meta' — which sections/buttons the editor page shows
+let detailEntry = null;
+let detailCategory = null;
+let detailKind = null;
 
 const LYRICS_TIPS_HTML = `
   <h3>How to format lyrics</h3>
@@ -510,14 +583,15 @@ function renderAuthArea(user, profileEmail){
     area.appendChild(chip);
     el('signOutBtn').addEventListener('click', () => auth.signOut());
     el('topbarSub').textContent = isAdmin ? 'Signed in as admin — add, edit or remove entries' : 'Signed in — add new entries';
-    el('editOptRow').style.display = 'flex';
+    el('quickAddBtn').style.display = 'inline-block';
     el('previewToggleBtn').style.display = isAdmin ? 'inline-block' : 'none';
     el('publicNote').style.display = previewMode ? 'block' : 'none';
   } else {
     area.innerHTML = '<div id="gisBtn"></div>';
     renderGisButton();
     el('topbarSub').textContent = 'Browse sheet music — anyone can view';
-    el('editOptRow').style.display = 'none';
+    el('quickAddBtn').style.display = 'none';
+    el('previewToggleBtn').style.display = 'none';
     previewMode = false;
     resetForm();
     closeEditor();
@@ -648,10 +722,6 @@ el('quickAddBtn').addEventListener('click', () => {
   startAdd(currentCategory);
 });
 
-el('scrollListBtn').addEventListener('click', () => {
-  el('listCol').scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
-
 el('previewToggleBtn').addEventListener('click', () => {
   previewMode = !previewMode;
   el('previewToggleBtn').textContent = previewMode ? 'Exit Preview' : 'Preview as Visitor';
@@ -777,8 +847,93 @@ function renderList(){
 
 /* ---------- Detail view (lyrics / notes / YouTube open in-page, no new tab) ---------- */
 
+function formatReleaseDate(value){
+  if (!value) return '—';
+  const d = new Date(value + (value.length === 10 ? 'T00:00:00' : ''));
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+}
+
+function renderDetailInfo(entry, cat, kind){
+  const about = (entry.about || '').trim();
+  el('detailAbout').textContent = about || 'No song bio has been added yet.';
+
+  el('detailWriter').textContent = entry.writer || '—';
+  el('detailFeaturing').textContent = entry.featuring || '—';
+  el('detailProducer').textContent = entry.producer || '—';
+  el('detailMusicDirector').textContent = entry.musicDirector || '—';
+  el('detailReleaseDate').textContent = formatReleaseDate(entry.releaseDate);
+
+  // Keep the sidebar useful even when some fields are empty.
+  [
+    ['infoWriterRow', entry.writer],
+    ['infoFeaturingRow', entry.featuring],
+    ['infoProducerRow', entry.producer],
+    ['infoMusicDirectorRow', entry.musicDirector],
+    ['infoReleaseDateRow', entry.releaseDate]
+  ].forEach(([id, value]) => {
+    el(id).style.display = value ? 'grid' : 'none';
+  });
+
+  const lyricsSide = el('detailLyricsSide');
+  lyricsSide.innerHTML = '';
+  if (entry.lyricsText) {
+    const preview = document.createElement('p');
+    const plain = String(entry.lyricsText).trim();
+    preview.textContent = plain.length > 260 ? plain.slice(0, 260) + '…' : plain;
+    lyricsSide.appendChild(preview);
+
+    if (cat !== 'lyrics' || kind !== 'text') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'side-link-btn';
+      btn.style.marginTop = '10px';
+      btn.textContent = 'View Lyrics';
+      btn.addEventListener('click', () => openDetail(entry, 'lyrics', 'text'));
+      lyricsSide.appendChild(btn);
+    }
+  } else {
+    lyricsSide.innerHTML = '<p>Lyrics have not been added yet.</p>';
+  }
+}
+
+function renderDetailActions(entry, cat){
+  const actions = el('detailActions');
+  actions.innerHTML = '';
+
+  if (!isAdmin || previewMode) return;
+
+  if (cat === 'lyrics') {
+    const lyricsBtn = document.createElement('button');
+    lyricsBtn.type = 'button';
+    lyricsBtn.className = 'detail-edit-btn';
+    lyricsBtn.textContent = 'Edit Song Lyrics';
+    lyricsBtn.addEventListener('click', () => startEditLyrics(entry, cat));
+    actions.appendChild(lyricsBtn);
+  } else {
+    const notesBtn = document.createElement('button');
+    notesBtn.type = 'button';
+    notesBtn.className = 'detail-edit-btn';
+    notesBtn.textContent = 'Edit Notes';
+    notesBtn.addEventListener('click', () => startEditLyrics(entry, cat));
+    actions.appendChild(notesBtn);
+  }
+
+  const metaBtn = document.createElement('button');
+  metaBtn.type = 'button';
+  metaBtn.className = 'detail-edit-btn';
+  metaBtn.textContent = 'Edit Metadata';
+  metaBtn.addEventListener('click', () => startEditMetadata(entry, cat));
+  actions.appendChild(metaBtn);
+}
+
 function openDetail(entry, cat, kind){
+  detailEntry = entry;
+  detailCategory = cat;
+  detailKind = kind;
+
   el('mainGrid').style.display = 'none';
+  el('editorView').style.display = 'none';
   el('detailView').style.display = 'block';
 
   el('detailEyebrow').textContent = CATEGORY_LABELS[cat] || 'Song Lyrics';
@@ -792,6 +947,9 @@ function openDetail(entry, cat, kind){
   if (entry.imageUrl) { thumb.src = entry.imageUrl; thumb.style.display = 'block'; thumbPh.style.display = 'none'; }
   else { thumb.style.display = 'none'; thumbPh.style.display = 'flex'; }
 
+  renderDetailActions(entry, cat);
+  renderDetailInfo(entry, cat, kind);
+
   const body = el('detailBody');
   body.className = 'detail-body';
   body.innerHTML = '';
@@ -804,7 +962,11 @@ function openDetail(entry, cat, kind){
       <div class="detail-download"><a class="btn btn-brass" href="${entry.pdfData}" download="${escapeHtml(entry.pdfName || 'notes.pdf')}">Download PDF</a></div>`;
   } else if (kind === 'youtube') {
     const id = youtubeId(entry.youtube);
-    body.innerHTML = `<div class="detail-video-wrap"><iframe src="https://www.youtube.com/embed/${id}" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>`;
+    if (id) {
+      body.innerHTML = `<div class="detail-video-wrap"><iframe src="https://www.youtube.com/embed/${id}" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>`;
+    } else {
+      body.innerHTML = '<div class="empty">No valid YouTube link was found.</div>';
+    }
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -812,8 +974,12 @@ function openDetail(entry, cat, kind){
 
 function closeDetail(){
   el('detailView').style.display = 'none';
-  el('mainGrid').style.display = 'block';
   el('detailBody').innerHTML = '';
+  el('detailActions').innerHTML = '';
+  detailEntry = null;
+  detailCategory = null;
+  detailKind = null;
+  el('mainGrid').style.display = 'block';
 }
 el('detailBack').addEventListener('click', closeDetail);
 
@@ -870,6 +1036,12 @@ function fillMetaFields(entry){
   el('fTitle').value = entry.title || '';
   el('fArtist').value = entry.artist || '';
   el('fAlbum').value = entry.album || '';
+  el('fAbout').value = entry.about || '';
+  el('fWriter').value = entry.writer || '';
+  el('fFeaturing').value = entry.featuring || '';
+  el('fProducer').value = entry.producer || '';
+  el('fMusicDirector').value = entry.musicDirector || '';
+  el('fReleaseDate').value = entry.releaseDate || '';
   el('fYoutube').value = entry.youtube || '';
 
   existingImageUrl = entry.imageUrl || null;
@@ -938,7 +1110,7 @@ function startAdd(cat){
   setTimeout(() => el('fTitle').focus(), 200);
 }
 
-// "Edit Metadata" — full page with only Title/Artist/Album/Image/YouTube
+// "Edit Metadata" — full page with song details, credits, release date, image and YouTube
 function startEditMetadata(entry, cat){
   if (!isAdmin) return;
   resetForm();
@@ -954,7 +1126,7 @@ function startEditMetadata(entry, cat){
   el('editorTips').style.display = 'none';
 
   el('editorHeading').textContent = 'Edit Metadata';
-  el('editorSub').textContent = 'Update the title, artist, album, cover image, and YouTube link.';
+  el('editorSub').textContent = 'Update the song title, artist, album, about, credits, release date, cover image, and YouTube link.';
   el('saveBtn').textContent = 'Save';
   el('saveExitBtn').style.display = 'none';
   el('cancelEditBtn').style.display = 'inline-block';
@@ -1027,6 +1199,8 @@ function resetForm(){
   imageMode = 'url'; notesMode = 'pdf';
 
   el('fTitle').value=''; el('fArtist').value=''; el('fAlbum').value=''; el('fYoutube').value='';
+  el('fAbout').value=''; el('fWriter').value=''; el('fFeaturing').value=''; el('fProducer').value='';
+  el('fMusicDirector').value=''; el('fReleaseDate').value='';
   el('fImageUrl').value=''; el('fLyrics').value=''; el('fNotesText').value='';
   el('imgInput').value=''; el('pdfInput').value='';
 
@@ -1070,6 +1244,12 @@ async function performSave(exitAfter){
     data.title = title;
     data.artist = el('fArtist').value.trim();
     data.album = el('fAlbum').value.trim();
+    data.about = el('fAbout').value.trim();
+    data.writer = el('fWriter').value.trim();
+    data.featuring = el('fFeaturing').value.trim();
+    data.producer = el('fProducer').value.trim();
+    data.musicDirector = el('fMusicDirector').value.trim();
+    data.releaseDate = el('fReleaseDate').value || null;
     data.youtube = el('fYoutube').value.trim();
     if (imageMode === 'url') {
       data.imageUrl = el('fImageUrl').value.trim() || null;
