@@ -121,22 +121,22 @@
 
   .empty{ border:1px dashed var(--line); padding:40px 20px; text-align:center; color:var(--grey); font-size:14px; }
 
-  /* ---------- Modal ---------- */
-  .modal-overlay{ position:fixed; inset:0; background:rgba(11,11,12,0.8); display:none;
-    align-items:center; justify-content:center; z-index:100; padding:20px; }
-  .modal-overlay.open{ display:flex; }
-  .modal-box{ background:var(--white); width:100%; max-width:820px; max-height:88vh; display:flex;
-    flex-direction:column; overflow:hidden; }
-  .modal-head{ display:flex; justify-content:space-between; align-items:center;
-    padding:16px 20px; background:var(--black); }
-  .modal-head h3{ color:var(--cream); font-size:16px; font-weight:700; }
-  .modal-close{ background:transparent; border:none; font-size:22px; line-height:1; color:var(--yellow); }
-  .modal-body{ padding:0; flex:1; overflow:auto; background:#2b2b2b; }
-  .modal-body.text-mode{ background:var(--white); padding:22px 24px; white-space:pre-wrap;
-    font-size:14.5px; line-height:1.8; color:var(--ink); }
-  .modal-body iframe{ width:100%; height:75vh; border:none; display:block; }
-  .modal-foot{ padding:12px 20px; border-top:1px solid var(--line); background:var(--white);
-    display:flex; justify-content:flex-end; gap:10px; }
+  /* ---------- Detail (in-page lyrics / notes / video view) ---------- */
+  .back-link{ background:none; border:none; padding:0; margin-bottom:20px; color:var(--ink);
+    font-weight:700; font-size:14px; text-decoration:underline; }
+  .detail-card{ background:var(--white); border:1px solid var(--line); padding:28px; }
+  .detail-head{ display:flex; gap:18px; align-items:flex-start; margin-bottom:22px;
+    padding-bottom:22px; border-bottom:1px solid var(--line); }
+  .detail-thumb{ width:88px; height:88px; object-fit:cover; flex-shrink:0; background:#E7E1CE; }
+  #detailTitle{ font-size:26px; font-weight:800; }
+  .detail-meta{ font-size:14px; color:var(--grey); line-height:1.7; margin-top:6px; }
+  .detail-actions{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .detail-body.text-mode{ white-space:pre-wrap; font-size:15px; line-height:1.9; color:var(--ink); }
+  .detail-body iframe{ width:100%; height:75vh; border:none; display:block; background:#2b2b2b; }
+  .detail-body iframe.detail-video{ height:0; padding-bottom:56.25%; position:relative; }
+  .detail-video-wrap{ position:relative; width:100%; padding-bottom:56.25%; height:0; background:#000; }
+  .detail-video-wrap iframe{ position:absolute; inset:0; width:100%; height:100%; }
+  .detail-download{ margin-top:16px; }
 </style>
 </head>
 <body>
@@ -245,16 +245,19 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3 id="modalTitle">Preview</h3>
-        <button class="modal-close" id="modalCloseBtn">&times;</button>
+    <div id="detailView" style="display:none;">
+      <button type="button" class="back-link" id="detailBack">&larr; Back to list</button>
+      <div class="detail-card">
+        <div class="detail-head">
+          <img id="detailThumb" class="detail-thumb" style="display:none;" alt="">
+          <div>
+            <h2 id="detailTitle"></h2>
+            <div class="detail-meta" id="detailMeta"></div>
+          </div>
+        </div>
+        <div class="detail-body" id="detailBody"></div>
       </div>
-      <div class="modal-body" id="modalBody"></div>
-      <div class="modal-foot" id="modalFoot" style="display:none;"></div>
     </div>
   </div>
 
@@ -535,15 +538,15 @@ function renderList(){
 
   list.querySelectorAll('[data-view-pdf]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewPdf);
-    if (s) openPdfModal(s);
+    if (s) openDetail(s, cat, 'pdf');
   }));
   list.querySelectorAll('[data-view-text]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewText);
-    if (s) openTextModal(s, cat);
+    if (s) openDetail(s, cat, 'text');
   }));
   list.querySelectorAll('[data-view-yt]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewYt);
-    if (s) openYoutubeModal(s);
+    if (s) openDetail(s, cat, 'youtube');
   }));
   if (isAdmin) {
     list.querySelectorAll('[data-edit-id]').forEach(b => b.addEventListener('click', () => {
@@ -560,39 +563,46 @@ function renderList(){
   }
 }
 
-/* ---------- Modal (view PDF / text / YouTube) ---------- */
+/* ---------- Detail view (lyrics / notes / YouTube open in-page, no new tab) ---------- */
 
-function openModal(title){
-  el('modalTitle').textContent = title;
-  el('modalOverlay').classList.add('open');
-}
-function closeModal(){
-  el('modalOverlay').classList.remove('open');
-  el('modalBody').innerHTML = '';
-  el('modalBody').className = 'modal-body';
-  el('modalFoot').style.display = 'none';
-  el('modalFoot').innerHTML = '';
-}
-el('modalCloseBtn').addEventListener('click', closeModal);
-el('modalOverlay').addEventListener('click', e => { if (e.target.id === 'modalOverlay') closeModal(); });
+function openDetail(entry, cat, kind){
+  el('mainGrid').style.display = 'none';
+  el('detailView').style.display = 'block';
 
-function openPdfModal(entry){
-  openModal(entry.title || 'Notes');
-  el('modalBody').innerHTML = `<iframe src="${entry.pdfData}"></iframe>`;
-  el('modalFoot').style.display = 'flex';
-  el('modalFoot').innerHTML = `<a class="btn btn-brass" href="${entry.pdfData}" download="${escapeHtml(entry.pdfName || 'notes.pdf')}">Download PDF</a>`;
+  el('detailTitle').textContent = entry.title || 'Untitled';
+  const metaLines = [];
+  if (entry.artist) metaLines.push(escapeHtml(entry.artist));
+  if (entry.album) metaLines.push(escapeHtml(entry.album));
+  el('detailMeta').innerHTML = metaLines.join('<br>');
+
+  const thumb = el('detailThumb');
+  if (entry.imageUrl) { thumb.src = entry.imageUrl; thumb.style.display = 'block'; }
+  else { thumb.style.display = 'none'; }
+
+  const body = el('detailBody');
+  body.className = 'detail-body';
+  body.innerHTML = '';
+
+  if (kind === 'text') {
+    body.classList.add('text-mode');
+    body.textContent = cat === 'lyrics' ? (entry.lyricsText || '') : (entry.notesText || '');
+  } else if (kind === 'pdf') {
+    body.innerHTML = `<iframe src="${entry.pdfData}"></iframe>
+      <div class="detail-download"><a class="btn btn-brass" href="${entry.pdfData}" download="${escapeHtml(entry.pdfName || 'notes.pdf')}">Download PDF</a></div>`;
+  } else if (kind === 'youtube') {
+    const id = youtubeId(entry.youtube);
+    body.innerHTML = `<div class="detail-video-wrap"><iframe src="https://www.youtube.com/embed/${id}" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>`;
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-function openTextModal(entry, cat){
-  openModal(entry.title || (cat === 'lyrics' ? 'Lyrics' : 'Notes'));
-  const body = el('modalBody');
-  body.className = 'modal-body text-mode';
-  body.textContent = cat === 'lyrics' ? (entry.lyricsText || '') : (entry.notesText || '');
+
+function closeDetail(){
+  el('detailView').style.display = 'none';
+  el('mainGrid').style.display = 'block';
+  el('detailBody').innerHTML = '';
 }
-function openYoutubeModal(entry){
-  const id = youtubeId(entry.youtube);
-  openModal(entry.title || 'YouTube');
-  el('modalBody').innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen style="height:60vh;"></iframe>`;
-}
+el('detailBack').addEventListener('click', closeDetail);
 
 /* ---------- Image / PDF pickers ---------- */
 
