@@ -118,7 +118,8 @@
   .track-index{ font-family:'Anton',sans-serif; font-size:16px; color:#C9C2AC; }
   .track-thumb{ width:52px; height:52px; object-fit:cover; background:#E7E1CE; flex-shrink:0; }
   .track-thumb-empty{ display:flex; align-items:center; justify-content:center; color:#B4AC93; font-size:18px; }
-  .track-title{ font-size:16px; font-weight:700; margin-bottom:3px; }
+  .track-title{ font-size:16px; font-weight:700; margin-bottom:3px; cursor:pointer; }
+  .track-title:hover{ text-decoration:underline; }
   .track-meta{ font-size:13px; color:var(--grey); }
   .track-album{ font-size:12.5px; color:#9a917c; }
   .track-date{ font-size:12px; color:#a39a86; white-space:nowrap; }
@@ -161,6 +162,26 @@
   .detail-video-wrap{ position:relative; width:100%; padding-bottom:56.25%; height:0; background:#000; }
   .detail-video-wrap iframe{ position:absolute; inset:0; width:100%; height:100%; }
   .detail-download{ margin-top:16px; }
+
+  /* ---------- Right-click quick-edit context menu ---------- */
+  .ctx-menu{ position:fixed; z-index:1000; background:var(--white); border:1px solid var(--line);
+    box-shadow:0 8px 28px rgba(0,0,0,0.18); min-width:190px; padding:6px; display:none; }
+  .ctx-menu button{ display:block; width:100%; text-align:left; background:none; border:none;
+    padding:9px 12px; font-size:13.5px; color:var(--ink); }
+  .ctx-menu button:hover{ background:var(--cream); }
+  .ctx-menu button.danger{ color:var(--red); }
+  .ctx-menu hr{ border:none; border-top:1px solid var(--line); margin:5px 2px; }
+
+  /* ---------- Quick-edit modal ---------- */
+  .qe-overlay{ position:fixed; inset:0; background:rgba(11,11,12,0.55); display:none;
+    align-items:center; justify-content:center; z-index:1001; padding:20px; }
+  .qe-modal{ background:var(--white); max-width:480px; width:100%; padding:24px; max-height:88vh; overflow:auto; }
+  .qe-modal h3{ font-size:17px; margin-bottom:14px; }
+  .qe-modal textarea, .qe-modal input{ width:100%; padding:10px 12px; border:1px solid var(--line);
+    font-size:14px; background:var(--cream); font-family:'Inter',sans-serif; margin-bottom:10px; }
+  .qe-modal textarea{ min-height:200px; resize:vertical; line-height:1.5; }
+  .qe-actions{ display:flex; gap:10px; margin-top:6px; }
+  .qe-msg{ font-size:12.5px; margin-top:8px; min-height:16px; }
 </style>
 </head>
 <body>
@@ -300,6 +321,30 @@
         </div>
         <div class="detail-body" id="detailBody"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Right-click quick-edit menu (admin only) -->
+  <div class="ctx-menu" id="ctxMenu">
+    <button type="button" data-ctx="title">Edit Title</button>
+    <button type="button" data-ctx="content" id="ctxContentLabel">Edit Lyrics</button>
+    <button type="button" data-ctx="image">Replace Image</button>
+    <button type="button" data-ctx="youtube">Edit YouTube URL</button>
+    <hr>
+    <button type="button" data-ctx="full">Full Edit</button>
+    <button type="button" data-ctx="delete" class="danger">Delete</button>
+  </div>
+
+  <!-- Quick-edit modal (single field) -->
+  <div class="qe-overlay" id="qeOverlay">
+    <div class="qe-modal">
+      <h3 id="qeTitle">Edit</h3>
+      <div id="qeBody"></div>
+      <div class="qe-actions">
+        <button class="btn btn-brass" id="qeSave">Save</button>
+        <button class="btn btn-ghost" id="qeCancel">Cancel</button>
+      </div>
+      <div class="qe-msg" id="qeMsg"></div>
     </div>
   </div>
 
@@ -600,11 +645,11 @@ function renderList(){
     }
     const ytBtn = ytId ? `<button class="track-btn track-btn-video" data-view-yt="${s.id}">YouTube</button>` : '';
     return `
-    <div class="track-row">
+    <div class="track-row" data-row-id="${s.id}">
       <div class="track-index">${String(idx + 1).padStart(2,'0')}</div>
       ${thumb}
       <div class="track-info">
-        <div class="track-title">${escapeHtml(s.title || 'Untitled')}</div>
+        <div class="track-title" data-title-id="${s.id}">${escapeHtml(s.title || 'Untitled')}</div>
         ${s.artist ? `<div class="track-meta">${escapeHtml(s.artist)}</div>` : ''}
         ${s.album ? `<div class="track-album">${escapeHtml(s.album)}</div>` : ''}
       </div>
@@ -617,6 +662,21 @@ function renderList(){
       </div>
     </div>`;
   }).join('');
+
+  function openWhateverExists(s){
+    if (cat === 'lyrics') {
+      if (s.lyricsText) openDetail(s, cat, 'text');
+    } else {
+      if (s.contentType === 'pdf' && s.pdfData) openDetail(s, cat, 'pdf');
+      else if (s.contentType === 'text' && s.notesText) openDetail(s, cat, 'text');
+    }
+  }
+
+  // Clicking the title itself opens the same view as the Lyrics/Notes button
+  list.querySelectorAll('[data-title-id]').forEach(t => t.addEventListener('click', () => {
+    const s = items.find(i => i.id === t.dataset.titleId);
+    if (s) openWhateverExists(s);
+  }));
 
   list.querySelectorAll('[data-view-pdf]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewPdf);
@@ -642,6 +702,15 @@ function renderList(){
         if (editingId === b.dataset.delId) resetForm();
       } catch(e) { alert('Delete failed: ' + e.message); }
     }));
+
+    // Right-click on a row opens the quick-edit context menu
+    list.querySelectorAll('.track-row').forEach(row => {
+      row.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        const s = items.find(i => i.id === row.dataset.rowId);
+        if (s) openCtxMenu(e, s, cat);
+      });
+    });
   }
 }
 
@@ -686,7 +755,7 @@ function closeDetail(){
 }
 el('detailBack').addEventListener('click', closeDetail);
 
-/* ---------- Image / PDF pickers ---------- */
+/* ---------- Image / PDF pickers (main add/edit form) ---------- */
 
 document.querySelectorAll('#imageSeg button').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('#imageSeg button').forEach(x => x.classList.remove('active'));
@@ -732,7 +801,7 @@ el('pdfInput').addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-/* ---------- Edit / Reset ---------- */
+/* ---------- Edit / Reset (full form) ---------- */
 
 function startEdit(entry, cat){
   if (!isAdmin) return;
@@ -815,7 +884,7 @@ function resetForm(){
 }
 el('cancelEditBtn').addEventListener('click', resetForm);
 
-/* ---------- Save (create or update) ---------- */
+/* ---------- Save (create or update) — full form ---------- */
 
 el('saveBtn').addEventListener('click', async () => {
   if (!isSignedIn) { el('saveMsg').textContent = 'Please sign in first.'; el('saveMsg').className='save-msg err'; return; }
@@ -878,6 +947,181 @@ el('saveBtn').addEventListener('click', async () => {
   } finally {
     el('saveBtn').disabled = false;
     setTimeout(() => { el('saveMsg').textContent=''; }, 3000);
+  }
+});
+
+/* ---------- Right-click quick-edit context menu ---------- */
+
+let ctxEntry = null, ctxCat = null;
+
+function closeCtxMenu(){ el('ctxMenu').style.display = 'none'; }
+
+function openCtxMenu(e, entry, cat){
+  ctxEntry = entry; ctxCat = cat;
+  el('ctxContentLabel').textContent = cat === 'lyrics' ? 'Edit Lyrics' : 'Edit Notes';
+  const menu = el('ctxMenu');
+  menu.style.display = 'block';
+  const x = Math.min(e.clientX, window.innerWidth - 210);
+  const y = Math.min(e.clientY, window.innerHeight - 260);
+  menu.style.left = Math.max(8, x) + 'px';
+  menu.style.top = Math.max(8, y) + 'px';
+}
+
+document.addEventListener('click', e => { if (!el('ctxMenu').contains(e.target)) closeCtxMenu(); });
+document.addEventListener('scroll', closeCtxMenu, true);
+window.addEventListener('resize', closeCtxMenu);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCtxMenu(); });
+
+el('ctxMenu').querySelectorAll('button[data-ctx]').forEach(b => b.addEventListener('click', () => {
+  const action = b.dataset.ctx;
+  const entry = ctxEntry, cat = ctxCat;
+  closeCtxMenu();
+  if (!entry || !cat) return;
+  if (action === 'title') openQuickEdit(entry, cat, 'title');
+  else if (action === 'content') openQuickEdit(entry, cat, cat === 'lyrics' ? 'lyrics' : 'notes');
+  else if (action === 'image') openQuickEdit(entry, cat, 'image');
+  else if (action === 'youtube') openQuickEdit(entry, cat, 'youtube');
+  else if (action === 'full') startEdit(entry, cat);
+  else if (action === 'delete') {
+    if (!confirm('Delete this entry? This cannot be undone.')) return;
+    db.collection(COLLECTIONS[cat]).doc(entry.id).delete().catch(err => alert('Delete failed: ' + err.message));
+  }
+}));
+
+/* ---------- Quick-edit modal (single field, saves straight to Firestore) ---------- */
+
+let qeField = null, qeEntry = null, qeCat = null;
+let qePendingImage = null, qePendingPdf = null, qeImageMode = 'url', qeNotesMode = 'pdf';
+
+function openQuickEdit(entry, cat, field){
+  qeEntry = entry; qeCat = cat; qeField = field;
+  qePendingImage = null; qePendingPdf = null;
+  el('qeMsg').textContent = ''; el('qeMsg').style.color = 'var(--red)';
+  const body = el('qeBody');
+  const titles = { title:'Edit Title', lyrics:'Edit Lyrics', notes:'Edit Notes', image:'Replace Image', youtube:'Edit YouTube URL' };
+  el('qeTitle').textContent = titles[field] || 'Edit';
+
+  if (field === 'title') {
+    body.innerHTML = `<input type="text" id="qeInput" value="${escapeHtml(entry.title || '')}">`;
+  } else if (field === 'lyrics') {
+    body.innerHTML = `<textarea id="qeInput">${escapeHtml(entry.lyricsText || '')}</textarea>`;
+  } else if (field === 'youtube') {
+    body.innerHTML = `<input type="url" id="qeInput" placeholder="https://youtube.com/watch?v=..." value="${escapeHtml(entry.youtube || '')}">`;
+  } else if (field === 'image') {
+    const hasUrl = entry.imageUrl && !entry.imageUrl.startsWith('data:');
+    qeImageMode = 'url';
+    body.innerHTML = `
+      <div class="seg" id="qeImageSeg">
+        <button type="button" class="active" data-mode="url">Image URL</button>
+        <button type="button" data-mode="upload">Upload from device</button>
+      </div>
+      <input type="url" id="qeInput" placeholder="https://...jpg" value="${hasUrl ? escapeHtml(entry.imageUrl) : ''}">
+      <div class="filedrop" id="qeImgFiledrop" style="display:none;">
+        <label class="filedrop-label" for="qeImgInput" id="qeImgFiledropLabel">Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span></label>
+        <input type="file" id="qeImgInput" accept="image/*">
+      </div>`;
+    document.querySelectorAll('#qeImageSeg button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#qeImageSeg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      qeImageMode = b.dataset.mode;
+      el('qeInput').style.display = qeImageMode === 'url' ? 'block' : 'none';
+      el('qeImgFiledrop').style.display = qeImageMode === 'upload' ? 'block' : 'none';
+    }));
+    el('qeImgInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { el('qeMsg').textContent = 'Please choose an image file.'; return; }
+      if (file.size > 200*1024) { el('qeMsg').textContent = 'Image too large (keep under 200 KB).'; return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        qePendingImage = reader.result;
+        el('qeImgFiledropLabel').innerHTML = `Selected: ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
+      };
+      reader.readAsDataURL(file);
+    });
+  } else if (field === 'notes') {
+    qeNotesMode = entry.contentType === 'text' ? 'text' : 'pdf';
+    body.innerHTML = `
+      <div class="seg" id="qeNotesSeg">
+        <button type="button" class="${qeNotesMode==='pdf'?'active':''}" data-mode="pdf">Upload PDF</button>
+        <button type="button" class="${qeNotesMode==='text'?'active':''}" data-mode="text">Type as text</button>
+      </div>
+      <div class="filedrop" id="qePdfFiledrop" style="display:${qeNotesMode==='pdf'?'block':'none'};">
+        <label class="filedrop-label" for="qePdfInput" id="qePdfFiledropLabel">${entry.pdfName ? 'Keeping: '+escapeHtml(entry.pdfName)+'<br><span style="font-size:11.5px;">Click to replace</span>' : 'Click to choose a PDF<br><span style="font-size:11.5px;">Under 500 KB</span>'}</label>
+        <input type="file" id="qePdfInput" accept="application/pdf">
+      </div>
+      <textarea id="qeInput" style="display:${qeNotesMode==='text'?'block':'none'};">${escapeHtml(entry.notesText || '')}</textarea>`;
+    document.querySelectorAll('#qeNotesSeg button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#qeNotesSeg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      qeNotesMode = b.dataset.mode;
+      el('qePdfFiledrop').style.display = qeNotesMode === 'pdf' ? 'block' : 'none';
+      el('qeInput').style.display = qeNotesMode === 'text' ? 'block' : 'none';
+    }));
+    el('qePdfInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.type !== 'application/pdf') { el('qeMsg').textContent = 'Please choose a PDF file.'; return; }
+      if (file.size > 500*1024) { el('qeMsg').textContent = 'PDF too large (keep under 500 KB).'; return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        qePendingPdf = { dataUrl: reader.result, name: file.name };
+        el('qePdfFiledropLabel').innerHTML = `Selected: ${escapeHtml(file.name)}<br><span style="font-size:11.5px;">Click to replace</span>`;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  el('qeOverlay').style.display = 'flex';
+}
+
+function closeQuickEdit(){
+  el('qeOverlay').style.display = 'none';
+  qeEntry = null; qeField = null; qeCat = null;
+}
+el('qeCancel').addEventListener('click', closeQuickEdit);
+el('qeOverlay').addEventListener('click', e => { if (e.target === el('qeOverlay')) closeQuickEdit(); });
+
+el('qeSave').addEventListener('click', async () => {
+  if (!qeEntry || !qeCat || !qeField) return;
+  const data = {};
+
+  if (qeField === 'title') {
+    const v = el('qeInput').value.trim();
+    if (!v) { el('qeMsg').textContent = 'Title is required.'; return; }
+    data.title = v;
+  } else if (qeField === 'lyrics') {
+    const v = el('qeInput').value.trim();
+    if (!v) { el('qeMsg').textContent = 'Lyrics text is required.'; return; }
+    data.lyricsText = v;
+  } else if (qeField === 'youtube') {
+    data.youtube = el('qeInput').value.trim();
+  } else if (qeField === 'image') {
+    data.imageUrl = qeImageMode === 'url' ? (el('qeInput').value.trim() || null) : (qePendingImage || qeEntry.imageUrl || null);
+  } else if (qeField === 'notes') {
+    if (qeNotesMode === 'pdf') {
+      const pdfData = qePendingPdf ? qePendingPdf.dataUrl : (qeEntry.pdfData || null);
+      const pdfName = qePendingPdf ? qePendingPdf.name : (qeEntry.pdfName || null);
+      if (!pdfData) { el('qeMsg').textContent = 'Please upload a PDF, or switch to "Type as text".'; return; }
+      data.contentType = 'pdf'; data.pdfData = pdfData; data.pdfName = pdfName; data.notesText = null;
+    } else {
+      const v = el('qeInput').value.trim();
+      if (!v) { el('qeMsg').textContent = 'Please type the notes.'; return; }
+      data.contentType = 'text'; data.notesText = v; data.pdfData = null; data.pdfName = null;
+    }
+  }
+
+  el('qeSave').disabled = true;
+  el('qeMsg').style.color = 'var(--grey)';
+  el('qeMsg').textContent = 'Saving…';
+  try {
+    await db.collection(COLLECTIONS[qeCat]).doc(qeEntry.id).update(data);
+    closeQuickEdit();
+  } catch(e) {
+    el('qeMsg').style.color = 'var(--red)';
+    el('qeMsg').textContent = 'Save failed: ' + e.message;
+  } finally {
+    el('qeSave').disabled = false;
   }
 });
 
