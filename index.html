@@ -399,7 +399,7 @@
               <input type="url" id="fImageUrl" placeholder="https://...jpg">
               <div class="filedrop" id="imgFiledrop" style="display:none;margin-top:8px;">
                 <label class="filedrop-label" for="imgInput" id="imgFiledropLabel">
-                  Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>
+                  Click to choose an image<br><span style="font-size:11.5px;">Under 1 MB</span>
                 </label>
                 <input type="file" id="imgInput" accept="image/*">
               </div>
@@ -1105,7 +1105,7 @@ el('imgInput').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
   if (!file.type.startsWith('image/')) { el('saveMsg').textContent = 'Please choose an image file.'; el('saveMsg').className='save-msg err'; return; }
-  if (file.size > 200 * 1024) { el('saveMsg').textContent = 'Image too large (keep under 200 KB).'; el('saveMsg').className='save-msg err'; return; }
+  if (file.size > 1024 * 1024) { el('saveMsg').textContent = 'Image too large (keep under 1 MB).'; el('saveMsg').className='save-msg err'; return; }
   const reader = new FileReader();
   reader.onload = () => {
     pendingImage = { dataUrl: reader.result, name: file.name };
@@ -1158,7 +1158,7 @@ function fillMetaFields(entry){
   el('imgFiledrop').style.display = imageMode === 'upload' ? 'block' : 'none';
   el('imgFiledropLabel').innerHTML = entry.imageUrl && entry.imageUrl.startsWith('data:')
     ? 'Keeping current image<br><span style="font-size:11.5px;">Click to replace</span>'
-    : 'Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>';
+    : 'Click to choose an image<br><span style="font-size:11.5px;">Under 1 MB</span>';
 }
 
 // Fills in the lyrics/notes content fields from an entry
@@ -1308,7 +1308,7 @@ function resetForm(){
   el('fImageUrl').style.display = 'block';
   el('imgFiledrop').style.display = 'none';
   el('imgFiledrop').classList.remove('has-file');
-  el('imgFiledropLabel').innerHTML = 'Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span>';
+  el('imgFiledropLabel').innerHTML = 'Click to choose an image<br><span style="font-size:11.5px;">Under 1 MB</span>';
 
   document.querySelectorAll('#notesSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode==='pdf'));
   el('pdfFiledrop').style.display = 'block';
@@ -1483,7 +1483,7 @@ function openQuickEdit(entry, cat, field){
       </div>
       <input type="url" id="qeInput" placeholder="https://...jpg" value="${hasUrl ? escapeHtml(entry.imageUrl) : ''}">
       <div class="filedrop" id="qeImgFiledrop" style="display:none;">
-        <label class="filedrop-label" for="qeImgInput" id="qeImgFiledropLabel">Click to choose an image<br><span style="font-size:11.5px;">Under 200 KB</span></label>
+        <label class="filedrop-label" for="qeImgInput" id="qeImgFiledropLabel">Click to choose an image<br><span style="font-size:11.5px;">Under 1 MB</span></label>
         <input type="file" id="qeImgInput" accept="image/*">
       </div>`;
     document.querySelectorAll('#qeImageSeg button').forEach(b => b.addEventListener('click', () => {
@@ -1497,7 +1497,7 @@ function openQuickEdit(entry, cat, field){
       const file = e.target.files[0];
       if (!file) return;
       if (!file.type.startsWith('image/')) { el('qeMsg').textContent = 'Please choose an image file.'; return; }
-      if (file.size > 200*1024) { el('qeMsg').textContent = 'Image too large (keep under 200 KB).'; return; }
+      if (file.size > 1024*1024) { el('qeMsg').textContent = 'Image too large (keep under 1 MB).'; return; }
       const reader = new FileReader();
       reader.onload = () => {
         qePendingImage = reader.result;
