@@ -40,14 +40,31 @@
   .btn-ghost{ background:transparent; color:var(--cream); border:1px solid rgba(247,245,238,0.35); }
   .btn-brass{ background:var(--black); color:var(--yellow); }
   #gisBtn .no-signin{ font-size:13px; color:rgba(247,245,238,0.45); }
+  .topbar-mid{ flex:1; max-width:360px; margin:0 24px; }
+  .search-box{ width:100%; padding:9px 14px; border:1px solid rgba(247,245,238,0.25);
+    background:rgba(247,245,238,0.06); color:var(--cream); font-size:13.5px; font-family:'Inter',sans-serif; }
+  .search-box::placeholder{ color:rgba(247,245,238,0.4); }
+  .search-box:focus{ outline:none; border-color:var(--yellow); background:rgba(247,245,238,0.1); }
 
   /* ---------- Hero ---------- */
-  .hero{ background:var(--black); color:var(--cream); padding:10px clamp(18px,4vw,48px) 0; }
-  .hero-inner{ max-width:1180px; margin:0 auto; padding-top:28px; }
-  .hero-title{ font-family:'Anton',sans-serif; font-weight:400; font-size:clamp(40px,7vw,76px);
+  .hero{ position:relative; background:var(--black); color:var(--cream); padding:10px clamp(18px,4vw,48px) 0; overflow:hidden; }
+  .hero-bg{ position:absolute; inset:0; opacity:0.5; filter:blur(60px); pointer-events:none;
+    background:
+      radial-gradient(circle at 12% 20%, rgba(245,244,0,0.28), transparent 45%),
+      radial-gradient(circle at 85% 0%, rgba(192,64,43,0.25), transparent 50%),
+      radial-gradient(circle at 60% 90%, rgba(245,244,0,0.14), transparent 55%); }
+  .hero-inner{ position:relative; max-width:1180px; margin:0 auto; padding-top:28px; }
+  .hero-top{ display:flex; align-items:flex-end; gap:22px; }
+  .hero-art{ width:112px; height:112px; object-fit:cover; flex-shrink:0; border:1px solid rgba(247,245,238,0.15); }
+  .hero-art-placeholder{ display:flex; align-items:center; justify-content:center; background:#1c1c1c;
+    color:rgba(247,245,238,0.35); font-size:34px; }
+  .hero-text{ flex:1; min-width:0; }
+  .hero-eyebrow{ font-size:12.5px; font-weight:700; letter-spacing:0.02em; color:var(--yellow); margin-bottom:6px; }
+  .hero-title{ font-family:'Anton',sans-serif; font-weight:400; font-size:clamp(34px,6vw,62px);
     line-height:0.95; letter-spacing:0.01em; }
-  .hero-desc{ margin:14px 0 26px; max-width:520px; font-size:15px; line-height:1.6; color:rgba(247,245,238,0.65); }
-  .tabs{ display:flex; gap:28px; border-top:1px solid var(--line-dark); }
+  .hero-desc{ margin:12px 0 0; max-width:520px; font-size:14.5px; line-height:1.6; color:rgba(247,245,238,0.65); }
+  .hero-count{ flex-shrink:0; font-size:13px; color:rgba(247,245,238,0.55); padding-bottom:6px; white-space:nowrap; }
+  .tabs{ margin-top:26px; display:flex; gap:28px; border-top:1px solid var(--line-dark); }
   .tab-btn{ background:transparent; border:none; color:rgba(247,245,238,0.55); font-size:14px;
     font-weight:600; font-family:'Inter',sans-serif; padding:16px 0; border-top:2px solid transparent;
     margin-top:-1px; }
@@ -149,15 +166,27 @@
         <div class="brand-sub" id="topbarSub">Browse sheet music — anyone can view</div>
       </div>
     </div>
+    <div class="topbar-mid">
+      <input type="text" id="searchInput" class="search-box" placeholder="Search by title...">
+    </div>
     <div id="authArea">
       <div id="gisBtn"></div>
     </div>
   </div>
 
   <div class="hero">
+    <div class="hero-bg"></div>
     <div class="hero-inner">
-      <h1 class="hero-title" id="heroTitle">Song Lyrics</h1>
-      <p class="hero-desc" id="heroDesc">Full lyrics for every song in the collection, ready to sing along.</p>
+      <div class="hero-top">
+        <img id="heroArt" class="hero-art" style="display:none;" alt="">
+        <div id="heroArtPlaceholder" class="hero-art hero-art-placeholder">&#9835;</div>
+        <div class="hero-text">
+          <div class="hero-eyebrow">Collection</div>
+          <h1 class="hero-title" id="heroTitle">Song Lyrics</h1>
+          <p class="hero-desc" id="heroDesc">Full lyrics for every song in the collection, ready to sing along.</p>
+        </div>
+        <div class="hero-count" id="heroCount">0 entries</div>
+      </div>
       <div class="tabs" id="categoryTabs">
         <button class="tab-btn active" data-cat="lyrics">Song Lyrics</button>
         <button class="tab-btn" data-cat="piano">Piano Notes</button>
@@ -302,9 +331,9 @@ let currentCategory = 'lyrics';
 let pendingGoogleProfile = null;
 let entriesCache = { lyrics: [], piano: [], guitar: [] };
 let filters = {
-  lyrics: { artist: '', album: '' },
-  piano: { artist: '', album: '' },
-  guitar: { artist: '', album: '' }
+  lyrics: { artist: '', album: '', search: '' },
+  piano: { artist: '', album: '', search: '' },
+  guitar: { artist: '', album: '', search: '' }
 };
 
 let editingId = null;        // doc id being edited, or null when adding new
@@ -453,6 +482,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     el('listHeading').textContent = CATEGORY_LABELS[currentCategory];
     el('heroTitle').textContent = CATEGORY_LABELS[currentCategory];
     el('heroDesc').textContent = CATEGORY_DESC[currentCategory];
+    el('searchInput').value = filters[currentCategory].search;
     resetForm();
     renderFormForCategory(currentCategory);
     populateFilters(currentCategory);
@@ -485,21 +515,31 @@ function populateFilters(cat){
 
 el('filterArtist').addEventListener('change', e => { filters[currentCategory].artist = e.target.value; renderList(); });
 el('filterAlbum').addEventListener('change', e => { filters[currentCategory].album = e.target.value; renderList(); });
+el('searchInput').addEventListener('input', e => { filters[currentCategory].search = e.target.value.trim().toLowerCase(); renderList(); });
 
 /* ---------- List rendering ---------- */
 
 function renderList(){
   const cat = currentCategory;
-  let items = entriesCache[cat] || [];
+  const allItems = entriesCache[cat] || [];
+
+  const firstWithArt = allItems.find(i => i.imageUrl);
+  const heroArt = el('heroArt'), heroArtPh = el('heroArtPlaceholder');
+  if (firstWithArt) { heroArt.src = firstWithArt.imageUrl; heroArt.style.display = 'block'; heroArtPh.style.display = 'none'; }
+  else { heroArt.style.display = 'none'; heroArtPh.style.display = 'flex'; }
+  el('heroCount').textContent = allItems.length + (allItems.length === 1 ? ' entry' : ' entries');
+
+  let items = allItems;
   const f = filters[cat];
   if (f.artist) items = items.filter(i => i.artist === f.artist);
   if (f.album) items = items.filter(i => i.album === f.album);
+  if (f.search) items = items.filter(i => (i.title || '').toLowerCase().includes(f.search));
 
   const list = el('songsList');
   el('songsCount').textContent = items.length ? (items.length + (items.length===1?' entry':' entries')) : '';
 
   if (!items.length) {
-    list.innerHTML = `<div class="empty">No entries yet${f.artist||f.album ? ' for this filter' : ''}. ${isSignedIn ? 'Use the form to add one.' : 'Sign in to add the first one.'}</div>`;
+    list.innerHTML = `<div class="empty">No entries yet${f.artist||f.album||f.search ? ' for this filter' : ''}. ${isSignedIn ? 'Use the form to add one.' : 'Sign in to add the first one.'}</div>`;
     return;
   }
 
