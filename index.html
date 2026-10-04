@@ -552,6 +552,42 @@ let detailEntry = null;
 let detailCategory = null;
 let detailKind = null;
 
+/* ---------- Open songs in their own tab ---------- */
+const urlParams = new URLSearchParams(window.location.search);
+const standalone = !!(urlParams.get('id') && urlParams.get('cat') && COLLECTIONS[urlParams.get('cat')]);
+
+function songUrl(cat, id, kind){
+  const u = new URL(window.location.href);
+  u.search = ''; u.hash = '';
+  u.searchParams.set('cat', cat);
+  u.searchParams.set('id', id);
+  u.searchParams.set('kind', kind);
+  return u.toString();
+}
+function openInNewTab(entry, cat, kind){
+  window.open(songUrl(cat, entry.id, kind), '_blank');
+}
+
+// Used only inside a song's own tab: shows the song once Firestore data has loaded
+function showStandalone(){
+  if (!standalone) return;
+  if (el('editorView').style.display === 'block') return; // don't interrupt editing
+  const cat = urlParams.get('cat');
+  const entry = (entriesCache[cat] || []).find(i => i.id === urlParams.get('id'));
+  if (!entry) return;
+  let kind = urlParams.get('kind') || 'text';
+  openDetail(entry, cat, kind);
+  document.title = (entry.title || 'Song') + ' — Music Notes';
+}
+
+if (standalone) {
+  currentCategory = urlParams.get('cat');
+  document.getElementById('categoryTabs').style.display = 'none';
+  document.querySelector('.hero').style.display = 'none';
+  el('mainGrid').style.display = 'none';
+  el('detailBack').innerHTML = '&larr; All songs';
+}
+
 const LYRICS_TIPS_HTML = `
   <h3>How to format lyrics</h3>
   <ul>
@@ -725,6 +761,7 @@ if (isConfigured) {
       isAdmin = !!profileEmail && profileEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
       renderAuthArea(user, profileEmail);
       renderList();
+      showStandalone(); // refresh song page so Edit buttons appear after sign-in
     } else {
       isSignedIn = false;
       isAdmin = false;
@@ -740,7 +777,7 @@ if (isConfigured) {
       const items = [];
       snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
       entriesCache[cat] = items;
-      if (cat === currentCategory) { populateFilters(cat); renderList(); }
+      if (cat === currentCategory) { populateFilters(cat); renderList(); showStandalone(); }
     }, err => {
       if (cat === currentCategory) {
         el('songsList').innerHTML = `<div class="empty">Couldn't load: ${escapeHtml(err.message)}</div>`;
@@ -781,6 +818,11 @@ function openEditor(){
 }
 function closeEditor(){
   el('editorView').style.display = 'none';
+  if (standalone) {
+    el('mainGrid').style.display = 'none';
+    showStandalone();
+    return;
+  }
   el('detailView').style.display = 'none';
   el('mainGrid').style.display = 'block';
 }
@@ -895,14 +937,14 @@ function renderList(){
 
   function openWhateverExists(s){
     if (cat === 'lyrics') {
-      if (s.lyricsText) openDetail(s, cat, 'text');
+      if (s.lyricsText) openInNewTab(s, cat, 'text');
     } else {
-      if (s.contentType === 'pdf' && s.pdfData) openDetail(s, cat, 'pdf');
-      else if (s.contentType === 'text' && s.notesText) openDetail(s, cat, 'text');
+      if (s.contentType === 'pdf' && s.pdfData) openInNewTab(s, cat, 'pdf');
+      else if (s.contentType === 'text' && s.notesText) openInNewTab(s, cat, 'text');
     }
   }
 
-  // Clicking the title itself opens the same view as the Lyrics/Notes button
+  // Clicking the title itself opens the same view as the Lyrics/Notes button (in a new tab)
   list.querySelectorAll('[data-title-id]').forEach(t => t.addEventListener('click', () => {
     const s = items.find(i => i.id === t.dataset.titleId);
     if (s) openWhateverExists(s);
@@ -910,15 +952,15 @@ function renderList(){
 
   list.querySelectorAll('[data-view-pdf]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewPdf);
-    if (s) openDetail(s, cat, 'pdf');
+    if (s) openInNewTab(s, cat, 'pdf');
   }));
   list.querySelectorAll('[data-view-text]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewText);
-    if (s) openDetail(s, cat, 'text');
+    if (s) openInNewTab(s, cat, 'text');
   }));
   list.querySelectorAll('[data-view-yt]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewYt);
-    if (s) openDetail(s, cat, 'youtube');
+    if (s) openInNewTab(s, cat, 'youtube');
   }));
   if (canEdit) {
     list.querySelectorAll('[data-edit-content-id]').forEach(b => b.addEventListener('click', () => {
@@ -944,7 +986,7 @@ function renderList(){
   }
 }
 
-/* ---------- Detail view (lyrics / notes / YouTube open in-page, no new tab) ---------- */
+/* ---------- Detail view (lyrics / notes / YouTube) ---------- */
 
 function formatReleaseDate(value){
   if (!value) return '—';
@@ -1081,7 +1123,14 @@ function closeDetail(){
   detailKind = null;
   el('mainGrid').style.display = 'block';
 }
-el('detailBack').addEventListener('click', closeDetail);
+el('detailBack').addEventListener('click', () => {
+  if (standalone) {
+    // go back to the main list (same page, no song parameters)
+    window.location.href = window.location.pathname;
+  } else {
+    closeDetail();
+  }
+});
 
 /* ---------- Image / PDF pickers (main add/edit form) ---------- */
 
