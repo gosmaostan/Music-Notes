@@ -177,6 +177,8 @@
   /* ---------- Detail (in-page lyrics / notes / video view) ---------- */
   .back-link{ background:none; border:none; padding:0; margin-bottom:20px; color:var(--ink);
     font-weight:700; font-size:14px; text-decoration:underline; }
+  .detail-nav{ display:flex; gap:22px; align-items:center; margin-bottom:20px; }
+  .detail-nav .back-link{ margin-bottom:0; }
   .detail-card{ background:var(--white); border:1px solid var(--line); overflow:hidden; }
   .detail-banner{ position:relative; background:var(--black); color:var(--cream);
     padding:32px 28px; overflow:hidden; }
@@ -307,7 +309,10 @@
     </div>
 
     <div id="detailView" style="display:none;">
-      <button type="button" class="back-link" id="detailBack">&larr; Back to list</button>
+      <div class="detail-nav">
+        <button type="button" class="back-link" id="detailBack">&larr; Back</button>
+        <button type="button" class="back-link" id="detailHome">Main page</button>
+      </div>
       <div class="detail-card">
         <div class="detail-banner">
           <div class="hero-bg"></div>
@@ -564,8 +569,14 @@ function songUrl(cat, id, kind){
   u.searchParams.set('kind', kind);
   return u.toString();
 }
-function openInNewTab(entry, cat, kind){
-  window.open(songUrl(cat, entry.id, kind), '_blank');
+function openSong(entry, cat, kind){
+  // Same tab: the song gets its own URL, so the browser Back button also works
+  window.location.href = songUrl(cat, entry.id, kind);
+}
+function mainPageUrl(){
+  const u = new URL(window.location.href);
+  u.search = ''; u.hash = '';
+  return u.toString();
 }
 
 // Used only inside a song's own tab: shows the song once Firestore data has loaded
@@ -585,7 +596,15 @@ if (standalone) {
   document.getElementById('categoryTabs').style.display = 'none';
   document.querySelector('.hero').style.display = 'none';
   el('mainGrid').style.display = 'none';
-  el('detailBack').innerHTML = '&larr; All songs';
+}
+
+// Coming back to the list with ?cat=piano etc. reopens that tab
+if (!standalone && COLLECTIONS[urlParams.get('cat')]) {
+  currentCategory = urlParams.get('cat');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === currentCategory));
+  el('listHeading').textContent = CATEGORY_LABELS[currentCategory];
+  el('heroTitle').textContent = CATEGORY_LABELS[currentCategory];
+  el('heroDesc').textContent = CATEGORY_DESC[currentCategory];
 }
 
 const LYRICS_TIPS_HTML = `
@@ -937,10 +956,10 @@ function renderList(){
 
   function openWhateverExists(s){
     if (cat === 'lyrics') {
-      if (s.lyricsText) openInNewTab(s, cat, 'text');
+      if (s.lyricsText) openSong(s, cat, 'text');
     } else {
-      if (s.contentType === 'pdf' && s.pdfData) openInNewTab(s, cat, 'pdf');
-      else if (s.contentType === 'text' && s.notesText) openInNewTab(s, cat, 'text');
+      if (s.contentType === 'pdf' && s.pdfData) openSong(s, cat, 'pdf');
+      else if (s.contentType === 'text' && s.notesText) openSong(s, cat, 'text');
     }
   }
 
@@ -952,15 +971,15 @@ function renderList(){
 
   list.querySelectorAll('[data-view-pdf]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewPdf);
-    if (s) openInNewTab(s, cat, 'pdf');
+    if (s) openSong(s, cat, 'pdf');
   }));
   list.querySelectorAll('[data-view-text]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewText);
-    if (s) openInNewTab(s, cat, 'text');
+    if (s) openSong(s, cat, 'text');
   }));
   list.querySelectorAll('[data-view-yt]').forEach(b => b.addEventListener('click', () => {
     const s = items.find(i => i.id === b.dataset.viewYt);
-    if (s) openInNewTab(s, cat, 'youtube');
+    if (s) openSong(s, cat, 'youtube');
   }));
   if (canEdit) {
     list.querySelectorAll('[data-edit-content-id]').forEach(b => b.addEventListener('click', () => {
@@ -1125,12 +1144,18 @@ function closeDetail(){
 }
 el('detailBack').addEventListener('click', () => {
   if (standalone) {
-    // go back to the main list (same page, no song parameters)
-    window.location.href = window.location.pathname;
+    // Go to the previous page if we came from this site, otherwise to the list of this category
+    const cameFromSite = document.referrer && new URL(document.referrer).origin === window.location.origin;
+    if (cameFromSite && window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = mainPageUrl() + '?cat=' + encodeURIComponent(urlParams.get('cat'));
+    }
   } else {
     closeDetail();
   }
 });
+el('detailHome').addEventListener('click', () => { window.location.href = mainPageUrl(); });
 
 /* ---------- Image / PDF pickers (main add/edit form) ---------- */
 
